@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Heute – Hotel-Dashboard</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F5EFF3}
+a{color:#B5006B}a:hover{color:#8A0052}
+button{font-family:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:0.45}
+input,textarea{font-family:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid #B5006B;outline-offset:2px}
+.drawer{animation:drawerIn .32s cubic-bezier(.2,.8,.2,1)}
+.scrim{animation:scrimIn .2s ease}
+@keyframes drawerIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+@media (max-width: 760px){
+.side{flex:1 1 100% !important;max-width:none !important;flex-direction:row !important;padding:12px 16px !important;justify-content:flex-start !important}
+.side-bottom{margin-top:0 !important;margin-left:auto !important;flex-direction:row !important}
+.content{padding:24px 18px 96px !important}
+.drawer{top:0 !important;right:0 !important;bottom:0 !important;max-width:100% !important;border-radius:0 !important}
+}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F5EFF3; color: #1E1A22; font-family: 'Inter', system-ui, -apple-system, sans-serif; display: flex; flex-wrap: wrap; box-sizing: border-box; font-size: 14px;">
+
+  <nav class="side" aria-label="Hauptmenü" style="flex: 0 0 92px; max-width: 92px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #EADDE5; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 0;">
+    <div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #FF3EA5, #B5006B); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; margin-bottom: 18px;">h</div>
+    <button aria-label="Heute" onClick="{{goToday}}" style="{{navTodayStyle}}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      <span style="font-size: 11px;">Heute</span>
+    </button>
+    <button aria-label="Analysen" onClick="{{goAnalytics}}" style="{{navAnalyticsStyle}}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 6-7"></path></svg>
+      <span style="font-size: 11px;">Analysen</span>
+    </button>
+    <button aria-label="Datenquellen" onClick="{{goData}}" style="{{navDataStyle}}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg>
+      <span style="font-size: 11px;">Daten</span>
+    </button>
+    <button aria-label="Schicht-Log" onClick="{{goLog}}" style="{{navLogStyle}}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"></path><circle cx="3.5" cy="6" r="1"></circle><circle cx="3.5" cy="12" r="1"></circle><circle cx="3.5" cy="18" r="1"></circle></svg>
+      <span style="font-size: 11px;">Log</span>
+    </button>
+    <div class="side-bottom" style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+      <div aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: #F6E6EF; color: #8A0052; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">{{initials}}</div>
+    </div>
+  </nav>
+
+  <main class="content" style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 40px 48px 96px;">
+    <div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px;">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 13px; color: #6A5F69;">{{eyebrow}}</span>
+          <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">{{heading}}</h1>
+        </div>
+        <div role="group" aria-label="Ansicht für" style="display: flex; background: #EDE2E9; border-radius: 12px; padding: 4px; gap: 4px;">
+          <button aria-pressed="{{isFront}}" onClick="{{setFront}}" style="{{roleFrontStyle}}">Rezeption</button>
+          <button aria-pressed="{{isManager}}" onClick="{{setManager}}" style="{{roleManagerStyle}}">Management</button>
+        </div>
+      </header>
+
+      <sc-if value="{{isToday}}" hint-placeholder-val="{{ true }}">
+        <section aria-label="Heute auf einen Blick" style="display: flex; flex-wrap: wrap; background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; overflow: hidden;">
+          <div style="flex: 1 1 140px; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #F1E8EE;">
+            <span style="font-size: 12px; color: #6A5F69;">Anreisen</span>
+            <span style="font-size: 22px; font-weight: 500;">4</span>
+          </div>
+          <div style="flex: 1 1 140px; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #F1E8EE;">
+            <span style="font-size: 12px; color: #6A5F69;">Abreisen</span>
+            <span style="font-size: 22px; font-weight: 500;">3</span>
+          </div>
+          <div style="flex: 1 1 140px; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #F1E8EE;">
+            <span style="font-size: 12px; color: #6A5F69;">Belegung heute</span>
+            <span style="font-size: 22px; font-weight: 500;">82 %</span>
+          </div>
+          <div style="flex: 1 1 200px; padding: 16px 22px; display: flex; align-items: center; gap: 14px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0B6F99" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 15.5A4.5 4.5 0 0 0 17.5 7a6 6 0 0 0-11.4 2A4 4 0 0 0 6.5 17H17"></path><path d="M8 20l1-2M12 21l1-2M16 20l1-2"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 12px; color: #6A5F69;">Morgen · Open-Meteo</span>
+              <span style="font-size: 15px; font-weight: 500;">Regen · 9 °C</span>
+            </div>
+          </div>
+        </section>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start;">
+
+          <section aria-label="Chancen für persönliche Angebote" style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+              <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600;">{{feedTitle}}</h2>
+              <span style="font-size: 13px; color: #6A5F69;">{{openLabel}}</span>
+            </div>
+
+            <sc-for list="{{openCards}}" as="c" hint-placeholder-count="4">
+              <article style="{{c.cardStyle}}">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; flex-wrap: wrap;">
+                  <span aria-hidden="true" style="{{c.dotStyle}}"></span>
+                  <span style="{{c.labelStyle}}">{{c.label}}</span>
+                  <span style="color: #6A5F69;">· {{c.when}}</span>
+                </div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em;">{{c.title}}</h3>
+                <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #5E5460;">{{c.why}}</p>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: #FDF3F8; border: 1px solid #F6DCEA;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5006B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9"></path><path d="M2 7h20v5H2z"></path><path d="M12 22V7"></path><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+                  <span style="font-size: 13px; color: #6A0040;"><span style="font-weight: 600;">Angebot:</span> {{c.offer}}</span>
+                </div>
+                <div aria-label="Verwendete Daten" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{c.tagList}}" as="t" hint-placeholder-count="2">
+                    <span style="{{t.style}}">{{t.name}}</span>
+                  </sc-for>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 2px;">
+                  <button onClick="{{c.compose}}" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: #B5006B; color: #FFFFFF; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.2L4 17.2z"></path><path d="M8 9h8M8 12h5"></path></svg>
+                    Nachricht vorbereiten
+                  </button>
+                  <button onClick="{{c.ask}}" style="min-height: 44px; padding: 0 14px; border: 1px solid #E3D3DD; border-radius: 10px; background: #FFFFFF; color: #1E1A22; font-size: 14px;">Warum?</button>
+                  <button onClick="{{c.dismiss}}" style="min-height: 44px; padding: 0 10px; margin-left: auto; border: none; background: transparent; color: #6A5F69; font-size: 13px;">Ausblenden</button>
+                </div>
+              </article>
+            </sc-for>
+
+            <sc-if value="{{allClear}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border: 1px dashed #DCC9D5; border-radius: 16px; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;">
+                <span style="font-size: 17px; font-weight: 500;">Alles erledigt.</span>
+                <span style="font-size: 14px; color: #5E5460;">Gerade gibt es keine offenen Chancen. Neue Vorschläge erscheinen hier automatisch.</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{hasHandled}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 10px;">
+                <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #6A5F69;">Erledigt in dieser Schicht</h2>
+                <sc-for list="{{handledCards}}" as="h" hint-placeholder-count="1">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: #FFFFFF; border: 1px solid #F1E8EE;">
+                    <span aria-hidden="true" style="{{h.iconStyle}}">{{h.mark}}</span>
+                    <span style="flex: 1 1 auto; font-size: 14px; color: #3B3340;">{{h.text}}</span>
+                    <span style="font-size: 12px; color: #6A5F69;">{{h.state}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </section>
+
+          <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+            <sc-if value="{{showArrivals}}" hint-placeholder-val="{{ true }}">
+              <section aria-label="Anreisen heute" style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+                  <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;">Anreisen heute</h2>
+                  <span style="font-size: 11px; color: #6A5F69;">ibelsa</span>
+                </div>
+                <sc-for list="{{arrivals}}" as="a" hint-placeholder-count="4">
+                  <div style="display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid #F3EBF0;">
+                    <span style="flex: 0 0 36px; font-size: 13px; font-weight: 600; color: #0B6F99; font-variant-numeric: tabular-nums; padding-top: 1px;">{{a.room}}</span>
+                    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+                      <span style="font-size: 14px; font-weight: 500;">{{a.name}}</span>
+                      <span style="font-size: 12px; color: #6A5F69;">{{a.meta}}</span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        <sc-for list="{{a.tags}}" as="g" hint-placeholder-count="1">
+                          <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #FDF0F6; color: #8A0052;">{{g.name}}</span>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </section>
+              <section aria-label="Rund ums Hotel" style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                  <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;">Rund ums Hotel</h2>
+                  <span style="font-size: 11px; color: #6A5F69;">Beispieldaten</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+                  <div style="padding: 10px; border-radius: 12px; background: #F2F8FB; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: #3F5C6B;">Heute</span>
+                    <span style="font-size: 14px; font-weight: 500; color: #0B4F6E;">Bewölkt, 11°</span>
+                  </div>
+                  <div style="padding: 10px; border-radius: 12px; background: #E3F1F8; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: #3F5C6B;">So</span>
+                    <span style="font-size: 14px; font-weight: 500; color: #0B4F6E;">Regen, 9°</span>
+                  </div>
+                  <div style="padding: 10px; border-radius: 12px; background: #F2F8FB; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: #3F5C6B;">Mo</span>
+                    <span style="font-size: 14px; font-weight: 500; color: #0B4F6E;">Sonnig, 12°</span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <span style="flex: 0 0 auto; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 999px; background: #E6F2F8; color: #0B5C80;">TOURDATA</span>
+                    <span style="font-size: 13px; line-height: 1.45; color: #3B3340;">Therme in der Nähe · täglich 9–22 Uhr</span>
+                  </div>
+                  <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <span style="flex: 0 0 auto; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 999px; background: #E6F2F8; color: #0B5C80;">TOURDATA</span>
+                    <span style="font-size: 13px; line-height: 1.45; color: #3B3340;">Adventmarkt im Ort · ab 20. November</span>
+                  </div>
+                </div>
+              </section>
+            </sc-if>
+
+            <sc-if value="{{showKpis}}" hint-placeholder-val="{{ false }}">
+              <section aria-label="Kennzahlen" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+                <sc-for list="{{miniKpis}}" as="k" hint-placeholder-count="3">
+                  <div style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 14px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                    <span style="font-size: 11px; line-height: 1.35; color: #6A5F69;">{{k.label}}</span>
+                    <span style="font-size: 20px; font-weight: 500; letter-spacing: -0.01em;">{{k.value}}</span>
+                    <span style="{{k.deltaStyle}}">{{k.delta}}</span>
+                  </div>
+                </sc-for>
+              </section>
+              <section aria-label="Belegung" style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;">Belegung 4.–22. November</h2>
+                  <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #5E5460;">
+                    <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #8ACFEF;"></span>Gebucht</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #F0940A;"></span>Option</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #0B6F99;"></span>Heute</span>
+                  </div>
+                </div>
+                <div role="img" aria-label="Belegung vom 4. bis 22. November. Höchstwert 82 Prozent am 7. November, ab 18. November unter 15 Prozent. Am 14. bis 16. und 19. bis 21. November sind rund 12 Prozent als Option gebucht." style="display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: flex-end; gap: 3px; height: 120px; border-bottom: 1px solid #DCCFD7;">
+                    <sc-for list="{{miniDays}}" as="b" hint-placeholder-count="19">
+                      <div style="flex: 1 1 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;">
+                        <div style="{{b.optStyle}}"></div>
+                        <div style="{{b.confStyle}}"></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: #6A5F69;">
+                    <span>4.11.</span><span>11.11.</span><span>18.11.</span><span>22.11.</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; color: #6A5F69;">Quelle: ibelsa Belegung (Demo-Account)</span>
+              </section>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isAnalytics}}" hint-placeholder-val="{{ false }}">
+        <section aria-label="Kennzahlen" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+          <sc-for list="{{kpiTiles}}" as="k" hint-placeholder-count="4">
+            <button aria-pressed="{{k.on}}" onClick="{{k.pick}}" style="{{k.tileStyle}}">
+              <span style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+                <span style="font-size: 12px; color: #6A5F69;">{{k.label}}</span>
+                <span aria-hidden="true" style="{{k.dotStyle}}"></span>
+              </span>
+              <span style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: #1E1A22;">{{k.value}}</span>
+              <span style="{{k.deltaStyle}}">{{k.delta}}</span>
+              <span style="font-size: 11px; color: #6A5F69;">{{k.source}}</span>
+            </button>
+          </sc-for>
+        </section>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+          <section aria-label="Analyse" style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 26px; display: flex; flex-direction: column; gap: 22px;">
+            <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 320px; min-width: 0;">
+                <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #B5006B;">{{kpi.label}} · Analyse</span>
+                <h2 style="margin: 0; font-size: 21px; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em;">{{kpi.summary}}</h2>
+              </div>
+              <button onClick="{{kpi.ask}}" style="min-height: 44px; padding: 0 16px; border: 1px solid #B5006B; border-radius: 10px; background: #FFFFFF; color: #B5006B; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>
+                Frage stellen
+              </button>
+            </div>
+
+            <sc-if value="{{kpi.isDays}}" hint-placeholder-val="{{ true }}">
+              <div role="img" aria-label="{{kpi.chartLabel}}" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #5E5460;">
+                  <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #8ACFEF;"></span>Gebucht</span>
+                  <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #F0940A;"></span>Option</span>
+                  <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: #0B6F99;"></span>Heute</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="display: flex; flex-direction: column; justify-content: space-between; height: 170px; font-size: 10px; color: #6A5F69; text-align: right; flex: 0 0 28px;">
+                    <span>100 %</span><span>50 %</span><span>0</span>
+                  </div>
+                  <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+                    <div style="display: flex; align-items: flex-end; gap: 3px; height: 170px; border-bottom: 1px solid #DCCFD7; background-image: linear-gradient(#F1E8EE 1px, transparent 1px); background-size: 100% 85px;">
+                      <sc-for list="{{kpi.days}}" as="b" hint-placeholder-count="31">
+                        <div style="flex: 1 1 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;">
+                          <div style="{{b.optStyle}}"></div>
+                          <div style="{{b.confStyle}}"></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #6A5F69;">
+                      <span>4.11.</span><span>11.11.</span><span>18.11.</span><span>25.11.</span><span>4.12.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{kpi.isBars}}" hint-placeholder-val="{{ false }}">
+              <div role="img" aria-label="{{kpi.chartLabel}}" style="display: flex; flex-direction: column; gap: 12px;">
+                <sc-for list="{{kpi.bars}}" as="r" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="flex: 0 0 130px; font-size: 13px; color: #3B3340;">{{r.label}}</span>
+                    <div style="flex: 1 1 auto; height: 14px; background: #F5EEF2; border-radius: 999px; overflow: hidden;">
+                      <div style="{{r.barStyle}}"></div>
+                    </div>
+                    <span style="flex: 0 0 44px; font-size: 13px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums;">{{r.value}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{kpi.isList}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column;">
+                <sc-for list="{{kpi.rows}}" as="r" hint-placeholder-count="5">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #F3EBF0;">
+                    <span style="flex: 0 0 64px; font-size: 13px; font-weight: 500; color: #0B6F99; font-variant-numeric: tabular-nums;">{{r.left}}</span>
+                    <span style="flex: 1 1 auto; font-size: 14px;">{{r.name}}</span>
+                    <span style="{{r.tagStyle}}">{{r.right}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <h3 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;">Woran es liegt</h3>
+              <sc-for list="{{kpi.drivers}}" as="dr" hint-placeholder-count="3">
+                <div style="display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #FCF9FB; border: 1px solid #F3EBF0;">
+                  <span style="{{dr.srcStyle}}">{{dr.src}}</span>
+                  <span style="font-size: 14px; line-height: 1.5; color: #3B3340; padding-top: 2px;">{{dr.detail}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size: 11px; color: #6A5F69;">{{kpi.footnote}}</span>
+          </section>
+
+          <section aria-label="Empfohlene Maßnahmen" style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+              <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600;">Empfohlene Maßnahmen</h2>
+              <span style="font-size: 13px; color: #6A5F69;">{{kpi.actionsLabel}}</span>
+            </div>
+            <sc-for list="{{kpi.actions}}" as="ac" hint-placeholder-count="3">
+              <article style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 500; line-height: 1.45;">{{ac.title}}</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #FDF0F6; color: #8A0052; font-weight: 500;">Wirkung: {{ac.impact}}</span>
+                  <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #F3EEF1; color: #5E5460;">Aufwand: {{ac.effort}}</span>
+                </div>
+                <sc-if value="{{ac.open}}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ac.act}}" style="align-self: flex-start; min-height: 44px; padding: 0 16px; border: none; border-radius: 10px; background: #B5006B; color: #FFFFFF; font-size: 14px; font-weight: 500;">{{ac.button}}</button>
+                </sc-if>
+                <sc-if value="{{ac.isDone}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #0B6F99; font-weight: 500; min-height: 44px;">
+                    <span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: #E3F1F8; display: flex; align-items: center; justify-content: center; font-size: 12px;">✓</span>
+                    {{ac.doneText}}
+                  </div>
+                </sc-if>
+              </article>
+            </sc-for>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isData}}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <sc-for list="{{sources}}" as="s" hint-placeholder-count="4">
+            <section style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600;">{{s.name}}</h2>
+                  <span style="font-size: 12px; color: #6A5F69;">{{s.kind}}</span>
+                </div>
+                <span style="{{s.statusStyle}}">{{s.status}}</span>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{s.fields}}" as="f" hint-placeholder-count="4">
+                  <span style="{{f.style}}">{{f.name}}</span>
+                </sc-for>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+
+        <section aria-label="Nicht verfügbar" style="background: #FFFFFF; border: 1px dashed #DCC9D5; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 10px;">
+          <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600;">Nicht im Datensatz – darum nicht im Dashboard</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #F3EEF1; color: #5E5460; text-decoration: line-through;">Website-Klicks</span>
+            <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #F3EEF1; color: #5E5460; text-decoration: line-through;">Gästevorlieben aus dem CRM</span>
+            <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #F3EEF1; color: #5E5460; text-decoration: line-through;">Online-Bewertungen</span>
+            <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #F3EEF1; color: #5E5460; text-decoration: line-through;">Antworten auf Pre-Arrival-Mails</span>
+          </div>
+        </section>
+
+        <section aria-label="So entstehen die Vorschläge" style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600;">So entstehen die Vorschläge</h2>
+            <span style="font-size: 13px; color: #6A5F69;">Jede Regel kombiniert nur Daten, die wirklich verfügbar sind.</span>
+          </div>
+          <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 0; border-top: 1px solid #F3EBF0;">
+              <span style="flex: 1 1 260px; font-size: 14px; color: #1E1A22;">{{r.when}}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B5006B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+              <span style="flex: 1 1 220px; font-size: 14px; font-weight: 500; color: #8A0052;">{{r.then}}</span>
+              <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{r.tags}}" as="t" hint-placeholder-count="2">
+                  <span style="{{t.style}}">{{t.name}}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isLog}}" hint-placeholder-val="{{ false }}">
+        <section aria-label="Schicht-Log" style="display: flex; flex-direction: column; gap: 16px; max-width: 820px;">
+          <div role="group" aria-label="Log filtern" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+              <button aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}</button>
+            </sc-for>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid #EADDE5; border-radius: 16px; padding: 8px 24px;">
+            <sc-for list="{{logRows}}" as="r" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid #F3EBF0; flex-wrap: wrap;">
+                <span style="flex: 0 0 44px; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #3B3340;">{{r.time}}</span>
+                <div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 14px; color: #1E1A22;">{{r.text}}</span>
+                  <span style="font-size: 12px; color: #6A5F69;">{{r.who}}</span>
+                </div>
+                <span style="{{r.badgeStyle}}">{{r.outcome}}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{logEmpty}}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; padding: 24px 0; font-size: 14px; color: #5E5460;">Für diesen Filter gibt es noch keine Einträge.</p>
+            </sc-if>
+          </div>
+        </section>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <sc-if value="{{hasSelected}}" hint-placeholder-val="{{ false }}">
+    <button class="scrim" aria-label="Schließen" onClick="{{closePanel}}" style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; border: none; padding: 0; background: rgba(30,26,34,0.34); cursor: default;"></button>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-label="{{sel.eyebrow}}" style="position: fixed; top: 16px; right: 16px; bottom: 16px; z-index: 50; width: 480px; max-width: calc(100% - 32px); background: #FFFFFF; border-radius: 20px; box-shadow: 0 24px 64px rgba(30,26,34,0.3); display: flex; flex-direction: column; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #C4007A 0%, #9A005B 100%); color: #FFFFFF; padding: 16px 16px 18px 22px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.85);">{{sel.eyebrow}}</span>
+          <button aria-label="Schließen" onClick="{{closePanel}}" style="width: 44px; height: 44px; border: none; background: transparent; color: #FFFFFF; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
+        <h2 style="margin: 0; font-size: 18px; font-weight: 500; line-height: 1.4;">{{sel.title}}</h2>
+        <div role="tablist" aria-label="Bereich" style="display: flex; gap: 6px; margin-top: 4px;">
+          <sc-if value="{{sel.hasMsg}}" hint-placeholder-val="{{ true }}">
+            <button role="tab" aria-selected="{{tabMsgOn}}" onClick="{{showMsgTab}}" style="{{tabMsgStyle}}">Nachricht</button>
+          </sc-if>
+          <sc-if value="{{sel.hasAsk}}" hint-placeholder-val="{{ true }}">
+            <button role="tab" aria-selected="{{tabAskOn}}" onClick="{{showAskTab}}" style="{{tabAskStyle}}">Warum &amp; Fragen</button>
+          </sc-if>
+        </div>
+      </div>
+
+      <sc-if value="{{showMsg}}" hint-placeholder-val="{{ true }}">
+        <div style="flex: 1 1 auto; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: #FCF9FB; border: 1px solid #F3EBF0;">
+            <span style="font-size: 12px; color: #6A5F69;">An</span>
+            <span style="font-size: 14px; font-weight: 500;">{{msg.to}}</span>
+            <span style="font-size: 13px; color: #5E5460;">{{msg.addrLine}}</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 12px; color: #6A5F69;">Kanal</span>
+              <div role="group" aria-label="Kanal" style="display: flex; background: #F3EAF0; border-radius: 10px; padding: 3px; gap: 3px;">
+                <button aria-pressed="{{msg.isMail}}" onClick="{{msg.setMail}}" style="{{msg.mailStyle}}">E-Mail</button>
+                <button aria-pressed="{{msg.isSms}}" disabled="{{msg.noSms}}" onClick="{{msg.setSms}}" style="{{msg.smsStyle}}">SMS</button>
+              </div>
+            </div>
+            <sc-if value="{{msg.isMail}}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 12px; color: #6A5F69;">Stil</span>
+                <div role="group" aria-label="Stil" style="display: flex; background: #F3EAF0; border-radius: 10px; padding: 3px; gap: 3px;">
+                  <button aria-pressed="{{msg.isLong}}" onClick="{{msg.setLong}}" style="{{msg.longStyle}}">Persönlich</button>
+                  <button aria-pressed="{{msg.isShort}}" onClick="{{msg.setShort}}" style="{{msg.shortStyle}}">Kurz</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{msg.noSms}}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 12px; color: #6A5F69; margin-top: -6px;">Keine Mobilnummer in ibelsa hinterlegt, darum nur E-Mail.</span>
+          </sc-if>
+          <sc-if value="{{msg.isMail}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="msg-subject" style="font-size: 12px; color: #6A5F69;">Betreff</label>
+              <input id="msg-subject" type="text" value="{{msg.subject}}" onInput="{{msg.onSubject}}" style="height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid #E3D3DD; border-radius: 10px; font-size: 14px; color: #1E1A22; background: #FFFFFF;">
+            </div>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="msg-body" style="font-size: 12px; color: #6A5F69;">Nachricht · bearbeitbar</label>
+            <textarea id="msg-body" value="{{msg.text}}" onInput="{{msg.onText}}" rows="12" style="box-sizing: border-box; padding: 12px 14px; border: 1px solid #E3D3DD; border-radius: 12px; font-size: 14px; line-height: 1.55; color: #1E1A22; background: #FFFFFF; resize: vertical; min-height: 220px;"></textarea>
+            <span style="font-size: 11px; color: #6A5F69; text-align: right;">{{msg.count}}</span>
+          </div>
+          <sc-if value="{{msg.hasNote}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #F2F8FB; color: #0B4F6E; font-size: 13px; line-height: 1.5;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 16px; margin-top: 2px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v.01M11 12h1v4h1"></path></svg>
+              <span>{{msg.note}}</span>
+            </div>
+          </sc-if>
+        </div>
+        <div style="border-top: 1px solid #F1E8EE; padding: 14px 18px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FCF9FB;">
+          <span style="font-size: 12px; color: #6A5F69;">Wird im Schicht-Log gespeichert</span>
+          <button onClick="{{msg.send}}" style="min-height: 46px; padding: 0 20px; border: none; border-radius: 12px; background: #B5006B; color: #FFFFFF; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            {{msg.sendLabel}}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showAsk}}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1 1 auto; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <span style="font-size: 12px; color: #6A5F69;">Diese Daten wurden kombiniert</span>
+            <sc-for list="{{sel.combined}}" as="k" hint-placeholder-count="3">
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="{{k.srcStyle}}">{{k.src}}</span>
+                <span style="font-size: 13px; line-height: 1.5; color: #3B3340; padding-top: 2px;">{{k.detail}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="height: 1px; background: #F1E8EE;"></div>
+          <div style="display: flex; justify-content: flex-start;">
+            <div style="max-width: 88%; padding: 10px 14px; border-radius: 14px; border-bottom-left-radius: 4px; font-size: 13px; line-height: 1.5; background: #F7EEF3; color: #1E1A22;">Hallo {{personName}}, frag mich alles dazu. Ich antworte nur mit Daten, die wirklich vorhanden sind.</div>
+          </div>
+          <sc-for list="{{messages}}" as="m" hint-placeholder-count="0">
+            <div style="{{m.rowStyle}}">
+              <div style="{{m.bubbleStyle}}">{{m.text}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-top: 1px solid #F1E8EE; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 10px; background: #FCF9FB;">
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{chips}}" as="ch" hint-placeholder-count="3">
+              <button onClick="{{ch.pick}}" style="min-height: 36px; padding: 6px 12px; border: 1px solid #E3D3DD; border-radius: 999px; background: #FFFFFF; color: #1E1A22; font-size: 13px; text-align: left;">{{ch.q}}</button>
+            </sc-for>
+          </div>
+          <form onSubmit="{{onSubmit}}" style="display: flex; gap: 8px; align-items: center;">
+            <label for="ask-input" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Frage stellen</label>
+            <input id="ask-input" type="text" value="{{draft}}" onInput="{{onDraft}}" placeholder="Frag etwas…" style="flex: 1 1 auto; min-width: 0; height: 46px; box-sizing: border-box; padding: 0 14px; border: 1px solid #E3D3DD; border-radius: 12px; background: #FFFFFF; font-size: 14px; color: #1E1A22;">
+            <button type="submit" aria-label="Senden" style="width: 46px; height: 46px; flex: 0 0 46px; border: none; border-radius: 12px; background: #B5006B; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+          </form>
+        </div>
+      </sc-if>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 60; background: #1E1A22; color: #FFFFFF; border-radius: 12px; padding: 6px 6px 6px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 30px rgba(30,26,34,0.25); font-size: 14px; max-width: calc(100% - 32px); box-sizing: border-box;">
+      <span>{{toastText}}</span>
+      <button onClick="{{undo}}" style="min-height: 40px; padding: 0 14px; border: none; border-radius: 8px; background: #3A3340; color: #FFFFFF; font-size: 13px; font-weight: 500;">Rückgängig</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { role: 'front', view: 'today', status: {}, selected: null, tab: 'msg', chats: {}, toast: null, log: [], n: 0, draft: '', logFilter: 'all', kpi: 'occ', msgs: {} };
+  }
+
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  data() {
+    const I = (n) => ({ n: n, ext: false });
+    const X = (n) => ({ n: n, ext: true });
+    const sign = 'Herzliche Grüße\nAnna vom Empfang';
+    const team = 'Herzliche Grüße\nIhr Hotelteam';
+    const M = {
+      advent: { to: 'Frühere Gäste mit Marketing-Einwilligung', dat: 'frühere Gäste', addr: 'Vorschau für Frau Kerstin Abt · kerstin.abt@example.com', mobile: null,
+        note: 'Geht nur an Kontakte mit Marketing-Einwilligung in ibelsa. Die App setzt für jeden Kontakt Anrede und Namen ein. [PREIS] vor dem Senden ergänzen.',
+        subject: 'Adventzeit bei uns – ruhige Tage zum Vorteilspreis',
+        long: 'Liebe Frau Abt,\n\nbald beginnt die Adventzeit, und ab dem 20. November öffnet der Adventmarkt im Ort. Wir laden Sie herzlich ein, ein paar ruhige Tage bei uns zu verbringen.\n\nUnser Adventpaket: 2 Nächte mit Frühstück ab [PREIS] €, buchbar vom 18. November bis 4. Dezember.\n\nBuchen Sie direkt auf unserer Website oder antworten Sie einfach auf diese Mail.\n\n' + team,
+        short: 'Liebe Frau Abt,\n\nAdventmarkt, Frühstück, Ruhe: 2 Nächte ab [PREIS] €, vom 18.11. bis 4.12. Antworten Sie einfach auf diese Mail.\n\n' + team },
+      options: { to: 'Gäste mit offenen Optionen (14.–16. und 19.–21.11.)', dat: 'Gäste mit Optionen', addr: 'Name, Zeitraum und Frist setzt die App aus ibelsa ein', mobile: null,
+        note: 'Platzhalter in eckigen Klammern füllt die App pro Reservierung aus ibelsa.',
+        subject: 'Ihre Reservierung im November – kurze Bestätigung',
+        long: 'Guten Tag [Anrede Name],\n\nfür Ihren Aufenthalt vom [Anreise] bis [Abreise] halten wir ein Zimmer als Option für Sie frei. Damit es sicher für Sie reserviert bleibt, bestätigen Sie bitte bis [Frist] kurz per Antwort auf diese Mail.\n\nWir freuen uns auf Sie!\n' + team,
+        short: 'Guten Tag [Anrede Name],\n\nbitte bestätigen Sie Ihre Option vom [Anreise] bis [Abreise] bis [Frist] – eine kurze Antwort reicht.\n\n' + team },
+      bday: { to: '5 Gäste mit Geburtstag, die nicht im Haus sind', dat: '5 Geburtstagsgäste', addr: 'Vorschau für Frau Ute Seifert (Geburtstag 8.11.)', mobile: null,
+        note: 'Die App erstellt für jeden Gast eine eigene Nachricht mit Name und Datum aus der ibelsa-Geburtstagsliste.',
+        subject: 'Herzlichen Glückwunsch, Frau Seifert!',
+        long: 'Liebe Frau Seifert,\n\nzu Ihrem Geburtstag am 8. November wünschen wir Ihnen alles Gute!\n\nAls kleines Geschenk wartet bei Ihrem nächsten Aufenthalt ein Glas Sekt auf Sie. Wir freuen uns, Sie bald wieder bei uns zu begrüßen.\n\n' + team,
+        short: 'Liebe Frau Seifert,\n\nalles Gute zum Geburtstag! Beim nächsten Besuch wartet ein Glas Sekt auf Sie.\n\n' + team },
+      portal: { to: 'Gäste mit Buchungsquelle „Buchungsportal“, nach Abreise', dat: 'Portal-Gäste', addr: 'Name setzt die App aus ibelsa ein', mobile: null,
+        note: '[VORTEIL] vor dem Senden festlegen, z. B. Frühstück gratis bei Direktbuchung.',
+        subject: 'Danke für Ihren Besuch – beim nächsten Mal direkt buchen',
+        long: 'Guten Tag [Anrede Name],\n\nvielen Dank, dass Sie bei uns waren! Wenn Sie wiederkommen möchten, buchen Sie am besten direkt bei uns: Über unsere Website oder per Antwort auf diese Mail erhalten Sie [VORTEIL].\n\n' + team,
+        short: 'Guten Tag [Anrede Name],\n\ndanke für Ihren Besuch! Direkt gebucht gibt es beim nächsten Mal [VORTEIL].\n\n' + team },
+      firma: { to: 'Gäste mit Buchungsquelle „Firma“', dat: 'Firmengäste', addr: 'Name und Firma setzt die App aus ibelsa ein', mobile: null,
+        note: 'Die passende Rate kommt aus den aktiven Raten in ibelsa.',
+        subject: 'Ihre nächste Geschäftsreise – einfach direkt buchen',
+        long: 'Guten Tag [Anrede Name],\n\nvielen Dank, dass [Firma] bei uns übernachtet. Für Ihre nächsten Aufenthalte bieten wir Ihnen gern eine feste Firmenrate an – buchbar direkt per Mail, ohne Umweg.\n\nSollen wir Ihnen ein Angebot schicken?\n\n' + team,
+        short: 'Guten Tag [Anrede Name],\n\nfür [Firma] haben wir gern eine feste Firmenrate. Sollen wir Ihnen ein Angebot schicken?\n\n' + team },
+      loyal: { to: '6 Gäste mit mehreren Buchungen im November', dat: '6 Mehrfachbucher', addr: 'Vorschau für Frau Brigitte Gottlieb', mobile: null,
+        note: 'Geht nur an Kontakte mit Marketing-Einwilligung. [VORTEIL] vor dem Senden festlegen.',
+        subject: 'Danke, dass Sie wiederkommen, Frau Gottlieb',
+        long: 'Liebe Frau Gottlieb,\n\nSie waren diesen November schon zweimal bei uns – darüber freuen wir uns sehr! Als Dankeschön erhalten Sie bei Ihrer nächsten Buchung im Winter [VORTEIL].\n\n' + team,
+        short: 'Liebe Frau Gottlieb,\n\ndanke für Ihre Treue! Bei der nächsten Winterbuchung gibt es [VORTEIL].\n\n' + team }
+    };
+    return {
+      people: { front: { name: 'Anna', initials: 'AK' }, manager: { name: 'Markus', initials: 'MR' } },
+      cards: {
+        front: [
+          { id: 'eggers', p: 'urgent', when: 'Anreise heute · Zimmer 211', title: 'Herr Alexander Eggers reist heute an und hat morgen Geburtstag.', why: 'Er wird 48 und bleibt eine Nacht im DZ Superior. Eine Überraschung am Morgen macht den kurzen Aufenthalt besonders.', offer: 'Geburtstagsfrühstück mit einem Glas Sekt',
+            tags: [I('Reservierung'), I('Geburtstagsliste'), I('Produkt Frühstück')],
+            combined: [ { src: 'ibelsa', detail: 'Reservierung: Zimmer 211, DZ Superior, 7.–8.11.' }, { src: 'ibelsa', detail: 'Geburtstagsliste: 8.11., wird 48.' }, { src: 'ibelsa', detail: 'Kontakt: E-Mail und Mobilnummer vorhanden.' } ],
+            chips: [ { q: 'Was wissen wir über seine Vorlieben?', a: 'In ibelsa sind keine Vorlieben hinterlegt. Bekannt sind nur Zimmerkategorie, Aufenthalt, Kontaktdaten und Geburtstag. Darum ist das Angebot bewusst allgemein gehalten.' }, { q: 'Können wir das Frühstück direkt buchen?', a: 'Ja. Frühstück ist als Produkt in ibelsa angelegt und kann per API zur Reservierung hinzugefügt werden.' }, { q: 'War er schon einmal hier?', a: 'Im Belegungsplan ist für November nur dieser Aufenthalt zu sehen.' } ],
+            msg: { to: 'Herr Alexander Eggers', dat: 'Herrn Eggers', addr: 'alexander.eggers@example.com', mobile: '12345',
+              subject: 'Morgen ist Ihr Tag, Herr Eggers',
+              long: 'Lieber Herr Eggers,\n\nschön, dass Sie heute bei uns sind! Morgen haben Sie Geburtstag – herzlichen Glückwunsch schon jetzt.\n\nWir würden Sie gern mit einem Geburtstagsfrühstück und einem Glas Sekt überraschen. Sagen Sie uns einfach, ob Sie es lieber im Frühstücksraum oder auf Zimmer 211 genießen möchten.\n\n' + sign,
+              short: 'Lieber Herr Eggers,\n\nalles Gute zum Geburtstag morgen! Darf es ein Geburtstagsfrühstück mit Sekt sein – im Frühstücksraum oder auf Zimmer 211?\n\n' + sign,
+              sms: 'Lieber Herr Eggers, alles Gute zum Geburtstag morgen! Dürfen wir Ihnen ein Frühstück mit Sekt servieren? Antworten Sie einfach mit JA. Ihr Hotel' } },
+          { id: 'klar', p: 'today', when: 'Anreise heute · Zimmer 116', title: 'Frau Marina Klar reist heute an. Ihr Geburtstag war am Donnerstag, und morgen regnet es.', why: 'Ein nachträglicher Glückwunsch und ein Tipp für den Regentag machen den Aufenthalt persönlich.', offer: 'Nachträglicher Glückwunsch und Thermen-Tickets',
+            tags: [I('Reservierung'), I('Geburtstagsliste'), X('Open-Meteo'), X('TOURDATA')],
+            combined: [ { src: 'ibelsa', detail: 'Reservierung: Zimmer 116, DZ Standard, 7.–10.11.' }, { src: 'ibelsa', detail: 'Geburtstagsliste: 5.11., wurde 44.' }, { src: 'Open-Meteo', detail: 'Sonntag Regen, 9 °C (Beispiel).', ext: true }, { src: 'TOURDATA', detail: 'Therme in der Nähe, täglich 9–22 Uhr (Beispiel).', ext: true } ],
+            chips: [ { q: 'Bucht sie öfter?', a: 'Ja. Im November hat sie mehrere Aufenthalte: jetzt 7.–10.11. in Zimmer 116 und ab 11.11. in Zimmer 210.' }, { q: 'Woher kommt der Thermen-Tipp?', a: 'Aus TOURDATA: Freizeiteinrichtungen mit Öffnungszeiten in der Nähe des Hotels. Welche es genau ist, hängt vom Standort ab.' }, { q: 'Wie sicher ist der Regen?', a: 'Open-Meteo gibt für morgen eine hohe Regenwahrscheinlichkeit an (Beispielwert im Mockup).' } ],
+            msg: { to: 'Frau Marina Klar', dat: 'Frau Klar', addr: 'marina.klar@example.com', mobile: null,
+              subject: 'Nachträglich alles Gute, Frau Klar',
+              long: 'Liebe Frau Klar,\n\nherzlich willkommen! Nachträglich alles Gute zu Ihrem Geburtstag am 5. November – schön, dass Sie ein paar Tage bei uns sind.\n\nFür morgen ist Regen angesagt. Unser Tipp: Die Therme in der Nähe hat täglich von 9 bis 22 Uhr geöffnet. Gern reservieren wir Ihnen Eintrittskarten.\n\n' + sign,
+              short: 'Liebe Frau Klar,\n\nnachträglich alles Gute zum Geburtstag! Morgen regnet es – sollen wir Ihnen Karten für die Therme (9–22 Uhr) reservieren?\n\n' + sign } },
+          { id: 'koehler', p: 'today', when: 'Abreise heute · Zimmer 218', title: 'Herr Thorsten Köhler von der Köhler AG reist heute ab.', why: 'Firmengäste kommen oft wieder. Wer beim Abschied eine direkte Buchung anbietet, spart die nächste Portalprovision.', offer: 'Nächste Buchung direkt mit Firmenrate',
+            tags: [I('Reservierung'), I('Firma'), I('Raten')],
+            combined: [ { src: 'ibelsa', detail: 'Reservierung #12: Zimmer 218, DZ Standard, 5.–7.11., 2 Personen.' }, { src: 'ibelsa', detail: 'Firma: Köhler AG, Kiel.' }, { src: 'ibelsa', detail: 'Aktive Raten: Firmenrate wird vorgeschlagen, wenn angelegt.' } ],
+            chips: [ { q: 'Hat die Köhler AG öfter gebucht?', a: 'Die App sucht in ibelsa alle Reservierungen mit derselben Firma. Im Demo-Account ist es diese eine.' }, { q: 'Gibt es eine Firmenrate?', a: 'Die aktiven Raten kommen aus ibelsa. Ist eine Firmenrate angelegt, wird sie automatisch in die Nachricht übernommen.' } ],
+            msg: { to: 'Herr Thorsten Köhler', dat: 'Herrn Köhler', addr: 'thorsten.koehler@example.com', mobile: null,
+              subject: 'Danke für Ihren Aufenthalt, Herr Köhler',
+              long: 'Sehr geehrter Herr Köhler,\n\nvielen Dank für Ihren Aufenthalt! Wir hoffen, Sie hatten zwei angenehme Nächte bei uns.\n\nWenn Sie oder Ihre Kolleginnen und Kollegen von der Köhler AG wieder anreisen, buchen Sie einfach direkt bei uns: Antworten Sie auf diese Mail, und wir halten Ihnen ein Zimmer zur Firmenrate frei.\n\nGute Heimreise nach Kiel!\n' + sign,
+              short: 'Sehr geehrter Herr Köhler,\n\ndanke für Ihren Besuch! Für Ihre nächste Reise mit der Köhler AG reservieren wir gern direkt zur Firmenrate – eine Antwort auf diese Mail genügt.\n\n' + sign } },
+          { id: 'haber', p: 'later', when: 'Anreise Di, 10.11. · 8 Nächte', title: 'Ehepaar Haber bleibt ab Dienstag acht Nächte, länger als fast alle anderen Gäste.', why: 'Bei langen Aufenthalten lohnen sich vorab ein Upgrade auf die Suite und ein paar Ausflugsideen.', offer: 'Upgrade auf die Suite und Ausflugstipps',
+            tags: [I('Reservierung'), I('Verfügbarkeit'), X('TOURDATA')],
+            combined: [ { src: 'ibelsa', detail: 'Reservierung: Zimmer 214, DZ Standard, 10.–18.11.' }, { src: 'ibelsa', detail: 'Verfügbarkeit: Suite an den meisten dieser Nächte frei.' }, { src: 'TOURDATA', detail: 'Aktivitäten und Veranstaltungen im Zeitraum, z. B. Adventmarkt ab 20.11. (Beispiel).', ext: true } ],
+            chips: [ { q: 'Ist die Suite wirklich frei?', a: 'Laut Belegungsplan an den meisten Nächten zwischen 10. und 18.11. Vor dem Upgrade prüft die App die Verfügbarkeit live.' }, { q: 'Welche Ausflüge passen?', a: 'TOURDATA liefert Wanderungen, Museen und Veranstaltungen. Für acht Nächte schlägt die App je nach Wetter einen Mix aus drinnen und draußen vor.' }, { q: 'Auf Deutsch oder Englisch?', a: 'Die Adresse liegt in Los Angeles. Die Sprache im ibelsa-Kontakt entscheidet, in welcher Sprache die Nachricht rausgeht.' } ],
+            msg: { to: 'Ehepaar Max Haber', dat: 'Ehepaar Haber', addr: 'max.haber@example.com', mobile: '987654',
+              subject: 'Ihre acht Nächte bei uns – zwei Ideen vorab',
+              long: 'Liebe Frau Haber, lieber Herr Haber,\n\nwir freuen uns auf Ihren Besuch ab Dienstag! Für Ihre acht Nächte haben wir zwei Ideen:\n\n• Ein Upgrade in unsere Suite – mehr Platz für einen längeren Aufenthalt.\n• Ausflugstipps für die Region, von Wanderungen bis zum Adventmarkt.\n\nSollen wir Ihnen das Upgrade reservieren? Antworten Sie einfach auf diese Mail.\n\n' + sign,
+              short: 'Liebe Frau Haber, lieber Herr Haber,\n\nfür Ihre acht Nächte ab Dienstag ist unsere Suite noch frei. Sollen wir Ihnen das Upgrade reservieren?\n\n' + sign,
+              sms: 'Hallo Ehepaar Haber, für Ihre 8 Nächte ab Dienstag ist unsere Suite noch frei. Interesse am Upgrade? Antworten Sie mit JA. Ihr Hotel' } },
+          { id: 'klein', p: 'later', when: 'Anreise Mo, 16.11. · Zimmer 110', title: 'Herr Andreas Klein hat am Dienstag Geburtstag und reist eine Woche später an.', why: 'Ein Glückwunsch vor der Anreise mit einer Einladung zum Nachfeiern verbindet beides.', offer: 'Glückwunsch und ein Glas Sekt zum Nachfeiern',
+            tags: [I('Reservierung'), I('Geburtstagsliste')],
+            combined: [ { src: 'ibelsa', detail: 'Reservierung: Zimmer 110, EZ Standard, ab 16.11.' }, { src: 'ibelsa', detail: 'Geburtstagsliste: 10.11., wird 57.' } ],
+            chips: [ { q: 'Wann genau ist der Geburtstag?', a: 'Am Dienstag, 10. November. Er wird 57.' }, { q: 'Was könnten wir noch anbieten?', a: 'Zum Beispiel einen Tisch im Restaurant am Anreiseabend. Das lässt sich als Produkt in ibelsa zur Reservierung hinzufügen.' } ],
+            msg: { to: 'Herr Andreas Klein', dat: 'Herrn Klein', addr: 'andreas.klein@example.com', mobile: null,
+              subject: 'Alles Gute, Herr Klein – wir feiern nach',
+              long: 'Lieber Herr Klein,\n\nam Dienstag haben Sie Geburtstag – dazu schon jetzt alles Gute! Wir freuen uns, dass Sie am 16. November zu uns kommen.\n\nZum Nachfeiern wartet bei Ihrer Anreise ein Glas Sekt auf Sie.\n\n' + sign,
+              short: 'Lieber Herr Klein,\n\nalles Gute zum Geburtstag am Dienstag! Bei Ihrer Anreise am 16.11. wartet ein Glas Sekt auf Sie.\n\n' + sign } }
+        ],
+        manager: [
+          { id: 'gap', p: 'urgent', when: '18.11.–4.12.', title: 'Ab 18. November liegt die Belegung unter 15 %.', why: 'Die zwei Wochen danach sind fast leer. Gleichzeitig startet laut TOURDATA der Adventmarkt im Ort – ein guter Anlass für ein Paket an frühere Gäste.', offer: 'Adventpaket per E-Mail an frühere Gäste',
+            tags: [I('Belegung'), I('Kontakte'), X('TOURDATA')],
+            combined: [ { src: 'ibelsa', detail: 'Belegung: bis 17.11. bis zu 82 %, ab 18.11. höchstens 12 %.' }, { src: 'ibelsa', detail: 'Kontakte mit E-Mail und Marketing-Einwilligung.' }, { src: 'TOURDATA', detail: 'Adventmarkt im Ort ab 20.11. (Beispiel).', ext: true } ],
+            chips: [ { q: 'Wen schreiben wir an?', a: 'Frühere Gäste mit E-Mail-Adresse und Marketing-Einwilligung aus ibelsa. Ohne Einwilligung wird niemand angeschrieben.' }, { q: 'Welche Veranstaltungen gibt es?', a: 'TOURDATA liefert alle Veranstaltungen der Region mit Datum und Ort. Die App wählt die passenden für den Zeitraum aus.' } ],
+            msg: M.advent },
+          { id: 'opts', p: 'today', when: '14.–16. und 19.–21.11.', title: 'Optionen für sechs Tage im November sind noch nicht bestätigt.', why: 'Das sind rund 12 % Belegung an diesen Tagen. Eine Erinnerung jetzt verhindert, dass die Zimmer leer bleiben.', offer: 'Freundliche Erinnerung zur Bestätigung',
+            tags: [I('Belegung'), I('Reservierungen')],
+            combined: [ { src: 'ibelsa', detail: 'Belegung: Optionen am 14.–16. und 19.–21.11., jeweils ca. 12 %.' }, { src: 'ibelsa', detail: 'Reservierungen mit Status Option und Kontaktdaten.' } ],
+            chips: [ { q: 'Wer hat die Optionen?', a: 'Die Namen kommen aus den Reservierungen mit Status Option in ibelsa. Im Mockup stehen Platzhalter.' }, { q: 'Was passiert ohne Antwort?', a: 'Die Option läuft aus und das Zimmer wird wieder frei. Die App erinnert Sie einen Tag vor der Frist.' } ],
+            msg: M.options },
+          { id: 'bdays', p: 'today', when: '5.–10.11.', title: 'Sieben Gäste haben diese Woche Geburtstag. Zwei davon sind bei uns.', why: 'Herr Eggers und Frau Klar übernimmt die Rezeption. Die anderen fünf bekommen einen Glückwunsch per E-Mail.', offer: 'Glückwunsch mit Sekt beim nächsten Besuch',
+            tags: [I('Geburtstagsliste'), I('Reservierungen')],
+            combined: [ { src: 'ibelsa', detail: 'Geburtstagsliste: 7 Gäste zwischen 5. und 10.11.' }, { src: 'ibelsa', detail: 'Reservierungen: Herr Eggers und Frau Klar sind diese Woche im Haus.' } ],
+            chips: [ { q: 'Wer hat Geburtstag?', a: 'Frau Klar (5.11.), Herr Eggers und Frau Seifert (8.11.), Frau Fischer, Ehepaar Müller und Herr Theiss (9.11.), Herr Klein (10.11.).' }, { q: 'Wer ist im Haus?', a: 'Herr Eggers bis 8.11., Frau Klar reist heute an. Herr Klein kommt am 16.11.' } ],
+            msg: M.bday }
+        ]
+      },
+      kpis: [
+        { id: 'occ', label: 'Belegung nächste 14 Tage', value: '40 %', delta: 'Ab 18.11. unter 15 %', tone: 'bad', source: 'ibelsa · Belegung', kind: 'days',
+          summary: 'Bis Mitte November ist das Haus gut gebucht. Danach wird es fast leer – und ein Teil der Buchungen sind nur Optionen.',
+          chartLabel: 'Belegung vom 4. November bis 4. Dezember. Höchstwert 82 Prozent am 7. November, ab 18. November höchstens 12 Prozent, ab 23. November keine Buchungen.',
+          drivers: [ { src: 'ibelsa', detail: 'Bis 17.11. bis zu 82 % belegt, ab 18.11. höchstens 12 %, ab 23.11. leer.' }, { src: 'ibelsa', detail: 'An sechs Tagen sind rund 12 % nur als Option gebucht.' }, { src: 'TOURDATA', detail: 'Ab 20.11. findet der Adventmarkt im Ort statt (Beispiel).', ext: true }, { src: 'OpenHolidays', detail: 'Prüft Ferien und Feiertage in den Herkunftsregionen Ihrer Gäste.', ext: true } ],
+          footnote: 'Quelle: ibelsa Demo-Account, Belegung inkl. Optionen · externe Daten als Beispiel',
+          actions: [ { id: 'a-occ-1', title: 'Adventpaket an frühere Gäste schicken', impact: 'Mehr Buchungen ab 18.11.', effort: 'Gering', button: 'Nachricht vorbereiten', msg: M.advent },
+                     { id: 'a-occ-2', title: 'Gäste mit offenen Optionen erinnern', impact: 'Ca. 12 % Belegung sichern', effort: 'Gering', button: 'Erinnerung vorbereiten', msg: M.options },
+                     { id: 'a-occ-3', title: 'Raten für 18.11.–4.12. in ibelsa prüfen', impact: 'Attraktiver für Kurzentschlossene', effort: 'Mittel', button: 'An Revenue senden', done: 'Raten-Check an Revenue gesendet' } ],
+          chips: [ { q: 'Welche Tage sind am schwächsten?', a: 'Ab 23.11. gibt es keine Buchungen mehr, vom 18. bis 22.11. höchstens 12 %.' }, { q: 'Wie viel davon sind Optionen?', a: 'Am 14.–16. und 19.–21.11. jeweils rund 12 Prozentpunkte.' } ] },
+        { id: 'direct', label: 'Direktbuchungen nächste 7 Tage', value: '64 %', delta: 'Homepage und Gast direkt', tone: 'good', source: 'ibelsa · Buchungsquellen', kind: 'bars',
+          summary: 'Die meisten Übernachtungen kommen über Ihre Homepage oder direkt vom Gast. Rund ein Viertel läuft noch über Portale.',
+          chartLabel: 'Übernachtungen nach Buchungsquelle, nächste 7 Tage: Homepage 38 Prozent, Gast direkt 26 Prozent, Buchungsportal 24 Prozent, Firma 12 Prozent.',
+          bars: [ { label: 'Homepage', v: 38, c: '#B5006B' }, { label: 'Gast direkt', v: 26, c: '#E0559A' }, { label: 'Buchungsportal', v: 24, c: '#0B6F99' }, { label: 'Firma', v: 12, c: '#8ACFEF' } ],
+          drivers: [ { src: 'ibelsa', detail: 'Buchungsquellen: Homepage ist die größte Quelle, vor Gast direkt.' }, { src: 'ibelsa', detail: 'Portal-Gäste haben meist eine E-Mail in ibelsa und lassen sich nach der Abreise direkt ansprechen.' }, { src: 'ibelsa', detail: 'Firmenbuchungen machen gut ein Zehntel aus.' } ],
+          footnote: 'Quelle: ibelsa Buchungsquellenbericht, Demo-Account, gerundet',
+          actions: [ { id: 'a-dir-1', title: 'Portal-Gästen nach der Abreise ein Direktbuchungs-Angebot schicken', impact: 'Weniger Provision', effort: 'Gering', button: 'Nachricht vorbereiten', msg: M.portal },
+                     { id: 'a-dir-2', title: 'Firmengästen eine feste Firmenrate anbieten', impact: 'Mehr wiederkehrende Buchungen', effort: 'Mittel', button: 'Nachricht vorbereiten', msg: M.firma } ],
+          chips: [ { q: 'Wie berechnet sich der Wert?', a: 'Homepage plus Gast direkt, geteilt durch alle Übernachtungen der nächsten 7 Tage aus dem Buchungsquellenbericht.' }, { q: 'Gibt es Marketing-Codes?', a: 'Ja, ibelsa hat einen Marketing-Code-Bericht. Die App kann damit später messen, welche Nachricht Buchungen gebracht hat.' } ] },
+        { id: 'bday', label: 'Geburtstage nächste 7 Tage', value: '7', delta: '2 davon im Haus', tone: 'neutral', source: 'ibelsa · Geburtstagsliste', kind: 'list',
+          summary: 'Sieben Gäste haben bald Geburtstag. Zwei sind diese Woche bei Ihnen, die anderen erreichen Sie per E-Mail.',
+          rows: [ { left: '5.11.', name: 'Frau Marina Klar · 44', right: 'Reist heute an', hot: true }, { left: '8.11.', name: 'Herr Alexander Eggers · 48', right: 'Im Haus', hot: true }, { left: '8.11.', name: 'Frau Ute Seifert · 54', right: 'E-Mail' }, { left: '9.11.', name: 'Frau Anja Fischer · 36', right: 'E-Mail' }, { left: '9.11.', name: 'Ehepaar Phillipp Müller · 26', right: 'E-Mail' }, { left: '9.11.', name: 'Herr Tom Theiss · 46', right: 'E-Mail' }, { left: '10.11.', name: 'Herr Andreas Klein · 57', right: 'Anreise 16.11.' } ],
+          drivers: [ { src: 'ibelsa', detail: 'Geburtstagsliste mit Datum und Alter für die nächsten 7 Tage.' }, { src: 'ibelsa', detail: 'Abgleich mit Reservierungen: Wer ist im Haus, wer reist bald an?' } ],
+          footnote: 'Quelle: ibelsa Geburtstagsliste und Reservierungen, Demo-Account',
+          actions: [ { id: 'a-bd-1', title: 'Glückwünsche an die 5 Gäste schicken, die nicht im Haus sind', impact: 'Persönlicher Kontakt', effort: 'Gering', button: 'Nachricht vorbereiten', msg: M.bday },
+                     { id: 'a-bd-2', title: 'Geburtstagsfrühstück für Herrn Eggers am 8.11. einplanen', impact: 'Besonderer Moment im Haus', effort: 'Gering', button: 'Frühstücksteam informieren', done: 'Frühstücksteam informiert' } ],
+          chips: [ { q: 'Woher kommen die Geburtstage?', a: 'Aus dem Geburtsdatum im ibelsa-Kontakt. Die Geburtstagsliste gibt es auch als PDF oder CSV.' } ] },
+        { id: 'loyal', label: 'Mehrfachbucher im November', value: '6', delta: 'Gäste mit 2+ Aufenthalten', tone: 'good', source: 'ibelsa · Belegungsplan', kind: 'list',
+          summary: 'Sechs Gäste buchen im November mehr als einmal. Sie sind Ihre wahrscheinlichsten Stammgäste.',
+          rows: [ { left: '3×', name: 'Herr Daniel Probst', right: 'DZ Standard' }, { left: '3×', name: 'Herr Daniel Herrmann', right: 'DZ / EZ Standard' }, { left: '3×', name: 'Frau Marina Klar', right: 'DZ Standard' }, { left: '2×', name: 'Frau Brigitte Gottlieb', right: 'EZ Standard' }, { left: '2×', name: 'Frau Thea Test', right: 'DZ Superior / EZ' }, { left: '2+', name: 'Ehepaar Phillipp Müller', right: 'DZ Standard' } ],
+          drivers: [ { src: 'ibelsa', detail: 'Belegungsplan: dieselben Namen tauchen im November mehrfach auf.' }, { src: 'ibelsa', detail: 'Kontakte: Für alle sechs ist eine E-Mail-Adresse hinterlegt.' } ],
+          footnote: 'Quelle: ibelsa Belegungsplan und Kontakte, Demo-Account',
+          actions: [ { id: 'a-lo-1', title: 'Treue-Angebot für den Winter an die sechs Gäste schicken', impact: 'Mehr Buchungen im Dezember', effort: 'Gering', button: 'Nachricht vorbereiten', msg: M.loyal },
+                     { id: 'a-lo-2', title: 'Diese Gäste in ibelsa als Stammgast markieren', impact: 'Rezeption erkennt sie sofort', effort: 'Gering', button: 'Markierung setzen', done: 'Sechs Kontakte als Stammgast markiert' } ],
+          chips: [ { q: 'Wie zählt die App Aufenthalte?', a: 'Sie zählt Reservierungen pro Kontakt im gewählten Zeitraum, Stornos und No-Shows nicht mitgerechnet.' } ] }
+      ],
+      arrivals: [
+        { room: '116', name: 'Frau Marina Klar', meta: 'DZ Standard · bis 10.11.', tags: ['Geburtstag war 5.11.', 'Mehrfachbucherin'] },
+        { room: '211', name: 'Herr Alexander Eggers', meta: 'DZ Superior · bis 8.11.', tags: ['Geburtstag morgen'] },
+        { room: '117', name: 'Herr Peter Pfeffer', meta: 'EZ Standard · bis 11.11.', tags: [] },
+        { room: '212', name: 'Herr Daniel Probst', meta: 'DZ Standard · bis 8.11.', tags: ['Mehrfachbucher'] }
+      ],
+      days: [ [6,0],[29,0],[76,0],[82,0],[71,0],[47,0],[59,0],[71,0],[59,0],[24,0],[18,12],[35,12],[53,12],[35,0],[12,0],[6,6],[6,6],[6,6],[6,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0] ],
+      initialLog: [
+        { id: 'i1', time: '15:58', who: 'ibelsa · System', text: 'Reservierung hinzugefügt: Saal, Buchungskanal Gast direkt', outcome: 'Info' },
+        { id: 'i2', time: '15:57', who: 'ibelsa · System', text: 'Reservierung für Theiss, Tom hinzugefügt: DZ Standard', outcome: 'Info' },
+        { id: 'i3', time: '15:55', who: 'ibelsa · System', text: 'Neuer Adresseintrag: Siemens AG', outcome: 'Info' },
+        { id: 'i4', time: '15:54', who: 'ibelsa · System', text: 'Reservierung für Müller, Phillipp geändert: DZ Standard', outcome: 'Info' }
+      ],
+      miniKpis: [
+        { label: 'Belegung heute', value: '82 %', delta: 'Höchster Wert im November', tone: 'good' },
+        { label: 'Belegung nächste 14 Tage', value: '40 %', delta: 'Ab 18.11. unter 15 %', tone: 'bad' },
+        { label: 'Direktbuchungen 7 Tage', value: '64 %', delta: 'Homepage + Gast direkt', tone: 'neutral' }
+      ],
+      sources: [
+        { name: 'ibelsa.rooms', kind: 'PMS · über die ibelsa-API', status: 'Verbunden', live: true,
+          fields: ['Reservierungen & Status', 'Anreisen / Abreisen / Im Haus', 'Zimmer & Kategorie', 'Rate & Personenzahl', 'Kontakte: Anrede, Adresse, E-Mail, Telefon', 'Sprache & Marketing-Einwilligung', 'Geburtstagsliste', 'Belegung & Optionen', 'Verfügbarkeit je Kategorie', 'Buchungsquellen', 'Produkte für Upselling', 'Rechnungen & Kennzahlenbericht', 'Fremdenverkehrsstatistik', 'Live-Log'] },
+        { name: 'TOURDATA', kind: 'Tourismus-Datenbank der Region', status: 'Beispieldaten', live: false,
+          fields: ['Veranstaltungen', 'Aktivitäten & Ausflüge', 'POIs mit Öffnungszeiten', 'Gastronomie', 'Pauschalen'] },
+        { name: 'Open-Meteo', kind: 'Open-Source-Wetterdaten', status: 'Beispieldaten', live: false,
+          fields: ['Wetter 7 Tage', 'Regenwahrscheinlichkeit', 'Temperatur'] },
+        { name: 'OpenHolidays API', kind: 'Offene Daten zu Ferien und Feiertagen', status: 'Geplant', live: false,
+          fields: ['Schulferien je Region', 'Feiertage', 'Abgleich über PLZ und Land der Kontakte'] }
+      ],
+      rules: [
+        { when: 'Geburtstag während oder kurz vor dem Aufenthalt', then: 'Glückwunsch mit kleinem Extra', tags: [I('Geburtstagsliste'), I('Reservierung')] },
+        { when: 'Langer Aufenthalt und höhere Kategorie frei', then: 'Upgrade-Angebot vor der Anreise', tags: [I('Reservierung'), I('Verfügbarkeit')] },
+        { when: 'Regen an einem Aufenthaltstag', then: 'Indoor-Tipp aus der Region', tags: [I('Reservierung'), X('Open-Meteo'), X('TOURDATA')] },
+        { when: 'Firmengast reist ab', then: 'Direktbuchung mit Firmenrate anbieten', tags: [I('Reservierung'), I('Firma'), I('Raten')] },
+        { when: 'Niedrige Belegung und Veranstaltung in der Region', then: 'Paket an frühere Gäste mit Einwilligung', tags: [I('Belegung'), I('Kontakte'), X('TOURDATA'), X('OpenHolidays')] }
+      ]
+    };
+  }
+
+  pri(p) {
+    const m = {
+      urgent: { label: 'Heute wichtig', dot: '#B5006B', text: '#B5006B' },
+      today: { label: 'Heute', dot: '#0B6F99', text: '#0B6F99' },
+      later: { label: 'Diese Woche', dot: '#B4AAB2', text: '#5E5460' }
+    };
+    return m[p];
+  }
+
+  tagStyle(ext) {
+    return 'font-size: 11px; font-weight: 500; padding: 4px 9px; border-radius: 999px; ' + (ext ? 'background: #E6F2F8; color: #0B5C80;' : 'background: #FDF0F6; color: #8A0052;');
+  }
+
+  srcStyle(ext) {
+    return 'flex: 0 0 86px; font-size: 11px; font-weight: 500; padding: 4px 0; text-align: center; border-radius: 999px; ' + (ext ? 'background: #E6F2F8; color: #0B5C80;' : 'background: #FDF0F6; color: #8A0052;');
+  }
+
+  clock(n) {
+    const m = 2 + n;
+    return '17:' + String(m).padStart(2, '0');
+  }
+
+  armToast() {
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 5000);
+  }
+
+  record(item, kind, text) {
+    const s = this.state;
+    const n = s.n + 1;
+    const p = this.data().people[s.role];
+    const roleName = s.role === 'front' ? 'Rezeption' : 'Management';
+    const t = text || (kind === 'done' ? item.done : 'Ausgeblendet: ' + item.title);
+    const entry = { id: 'e' + n, time: this.clock(n), who: p.name + ' · ' + roleName, text: t, outcome: kind === 'done' ? 'Erledigt' : 'Ausgeblendet' };
+    const status = Object.assign({}, s.status);
+    status[item.id] = kind;
+    this.setState({
+      status: status,
+      log: [entry].concat(s.log),
+      n: n,
+      selected: s.selected === item.id ? null : s.selected,
+      toast: { text: kind === 'done' ? t : 'Ausgeblendet. Ähnliche Vorschläge kommen seltener.', cardId: item.id, entryId: entry.id, doneText: t }
+    });
+    this.armToast();
+  }
+
+  undo() {
+    const t = this.state.toast;
+    if (!t) return;
+    const status = Object.assign({}, this.state.status);
+    delete status[t.cardId];
+    clearTimeout(this._t);
+    this.setState({ status: status, log: this.state.log.filter((e) => e.id !== t.entryId), toast: null });
+  }
+
+  addChat(id, q, a) {
+    const chats = Object.assign({}, this.state.chats);
+    chats[id] = (chats[id] || []).concat([{ r: 'u', t: q }, { r: 'a', t: a }]);
+    this.setState({ chats: chats });
+  }
+
+  setRole(r) { this.setState({ role: r, selected: null, draft: '' }); }
+
+  open(id, tab) { this.setState({ selected: id, tab: tab, draft: '' }); }
+
+  lookup(id, d, cards) {
+    if (!id) return null;
+    if (id.indexOf('k-') === 0) {
+      const k = d.kpis.find((x) => 'k-' + x.id === id);
+      return k ? { id: id, eyebrow: 'Analyse · ' + k.label, title: k.summary, combined: k.drivers, chips: k.chips, msg: null } : null;
+    }
+    if (id.indexOf('a-') === 0) {
+      for (const k of d.kpis) {
+        const a = k.actions.find((x) => x.id === id);
+        if (a) return { id: id, eyebrow: 'Maßnahme · ' + k.label, title: a.title, combined: [], chips: [], msg: a.msg || null };
+      }
+      return null;
+    }
+    const c = cards.find((x) => x.id === id);
+    return c ? { id: id, eyebrow: 'Persönliches Angebot · ' + this.pri(c.p).label, title: c.title, combined: c.combined, chips: c.chips, msg: c.msg } : null;
+  }
+
+  msgState(id, m) {
+    const cur = this.state.msgs[id];
+    if (cur) return cur;
+    return { channel: 'mail', variant: 'long', subject: m.subject, long: m.long, short: m.short, sms: m.sms || '' };
+  }
+
+  patchMsg(id, m, patch) {
+    const msgs = Object.assign({}, this.state.msgs);
+    msgs[id] = Object.assign({}, this.msgState(id, m), patch);
+    this.setState({ msgs: msgs });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const d = this.data();
+    const person = d.people[s.role];
+    const cards = d.cards[s.role];
+    const toneColor = (t) => (t === 'bad' ? '#B5006B' : (t === 'good' ? '#0B6F99' : '#5E5460'));
+
+    const segBase = 'min-height: 40px; padding: 0 16px; border: none; border-radius: 9px; font-size: 13px; font-weight: 500;';
+    const segOn = segBase + ' background: #FFFFFF; color: #B5006B; box-shadow: 0 1px 3px rgba(30,26,34,0.12);';
+    const segOff = segBase + ' background: transparent; color: #5E5460;';
+    const navBase = 'width: 76px; min-height: 56px; border: none; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;';
+    const navOn = navBase + ' background: #FDF0F6; color: #B5006B;';
+    const navOff = navBase + ' background: transparent; color: #6A5F69;';
+    const smallSeg = (on) => 'min-height: 36px; padding: 0 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; ' + (on ? 'background: #FFFFFF; color: #B5006B; box-shadow: 0 1px 3px rgba(30,26,34,0.12);' : 'background: transparent; color: #5E5460;');
+    const tabStyle = (on) => 'min-height: 38px; padding: 0 14px; border: none; border-radius: 999px; font-size: 13px; font-weight: 500; ' + (on ? 'background: #FFFFFF; color: #9A005B;' : 'background: rgba(255,255,255,0.16); color: #FFFFFF;');
+
+    const open = cards.filter((c) => !s.status[c.id]);
+    const handled = cards.filter((c) => s.status[c.id]);
+
+    const openCards = open.map((c) => {
+      const p = this.pri(c.p);
+      const isSel = s.selected === c.id;
+      return {
+        when: c.when, title: c.title, why: c.why, offer: c.offer, label: p.label,
+        tagList: c.tags.map((t) => ({ name: t.n, style: this.tagStyle(t.ext) })),
+        dotStyle: 'width: 8px; height: 8px; border-radius: 50%; background: ' + p.dot + ';',
+        labelStyle: 'color: ' + p.text + '; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px;',
+        cardStyle: 'background: #FFFFFF; border: 1px solid ' + (isSel ? '#B5006B' : '#EADDE5') + '; border-radius: 16px; padding: 22px 24px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 2px rgba(30,26,34,0.04);',
+        compose: () => this.open(c.id, 'msg'),
+        ask: () => this.open(c.id, 'ask'),
+        dismiss: () => this.record(c, 'dismissed')
+      };
+    });
+
+    const handledCards = handled.map((c) => {
+      const done = s.status[c.id] === 'done';
+      const entry = s.log.find((e) => e.text && e.outcome === 'Erledigt' && e.text.indexOf(c.msg.dat) !== -1);
+      return {
+        text: done ? (entry ? entry.text : c.offer) : c.title,
+        state: done ? 'Gesendet' : 'Ausgeblendet',
+        mark: done ? '✓' : '–',
+        iconStyle: 'width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; ' + (done ? 'background: #E3F1F8; color: #0B6F99;' : 'background: #F3EEF1; color: #6A5F69;')
+      };
+    });
+
+    const dayBars = (list, todayIdx) => list.map((v, i) => ({
+      confStyle: 'height: ' + v[0] + '%; background: ' + (i === todayIdx ? '#0B6F99' : '#8ACFEF') + '; border-radius: ' + (v[1] ? '0' : '3px 3px 0 0') + ';',
+      optStyle: 'height: ' + v[1] + '%; background: #F0940A; border-radius: 3px 3px 0 0;'
+    }));
+
+    const kpiObj = d.kpis.find((k) => k.id === s.kpi) || d.kpis[0];
+    const kpiTiles = d.kpis.map((k) => {
+      const on = k.id === kpiObj.id;
+      return {
+        label: k.label, value: k.value, delta: k.delta, source: k.source, on: on,
+        dotStyle: 'width: 8px; height: 8px; border-radius: 50%; background: ' + (k.tone === 'bad' ? '#B5006B' : (k.tone === 'good' ? '#0B6F99' : '#B4AAB2')) + ';',
+        deltaStyle: 'font-size: 12px; font-weight: 500; color: ' + toneColor(k.tone) + ';',
+        tileStyle: 'text-align: left; background: #FFFFFF; border: 1px solid ' + (on ? '#B5006B' : '#EADDE5') + '; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; box-shadow: ' + (on ? '0 0 0 3px rgba(181,0,107,0.12)' : '0 1px 2px rgba(30,26,34,0.04)') + ';',
+        pick: () => this.setState({ kpi: k.id })
+      };
+    });
+    const actionsOpen = kpiObj.actions.filter((a) => !s.status[a.id]).length;
+    const kpi = {
+      label: kpiObj.label, summary: kpiObj.summary, footnote: kpiObj.footnote, chartLabel: kpiObj.chartLabel || '',
+      isDays: kpiObj.kind === 'days', isBars: kpiObj.kind === 'bars', isList: kpiObj.kind === 'list',
+      days: kpiObj.kind === 'days' ? dayBars(d.days, 3) : [],
+      bars: (kpiObj.bars || []).map((b) => ({ label: b.label, value: b.v + ' %', barStyle: 'height: 100%; width: ' + b.v * 2.4 + '%; max-width: 100%; background: ' + b.c + '; border-radius: 999px;' })),
+      rows: (kpiObj.rows || []).map((r) => ({ left: r.left, name: r.name, right: r.right, tagStyle: 'font-size: 12px; padding: 3px 10px; border-radius: 999px; ' + (r.hot ? 'background: #FDF0F6; color: #8A0052; font-weight: 500;' : 'background: #F3EEF1; color: #5E5460;') })),
+      drivers: kpiObj.drivers.map((x) => ({ src: x.src, detail: x.detail, srcStyle: this.srcStyle(x.ext) })),
+      actionsLabel: actionsOpen === 0 ? 'Alle erledigt' : actionsOpen + ' offen',
+      ask: () => this.open('k-' + kpiObj.id, 'ask'),
+      actions: kpiObj.actions.map((a) => {
+        const entry = s.log.find((e) => e.actionId === a.id);
+        return {
+          title: a.title, impact: a.impact, effort: a.effort, button: a.button,
+          doneText: a.msg ? 'Nachricht an ' + a.msg.dat + ' gesendet' : a.done,
+          open: !s.status[a.id], isDone: !!s.status[a.id],
+          act: () => (a.msg ? this.open(a.id, 'msg') : this.record(a, 'done'))
+        };
+      })
+    };
+
+    const selItem = this.lookup(s.selected, d, cards);
+    const hasMsg = !!(selItem && selItem.msg);
+    const hasAsk = !!(selItem && selItem.chips && selItem.chips.length);
+    const tab = hasMsg && (s.tab === 'msg' || !hasAsk) ? 'msg' : 'ask';
+    const sel = selItem ? { eyebrow: selItem.eyebrow, title: selItem.title, hasMsg: hasMsg, hasAsk: hasAsk, combined: selItem.combined.map((x) => ({ src: x.src, detail: x.detail, srcStyle: this.srcStyle(x.ext) })) } : { eyebrow: '', title: '', hasMsg: false, hasAsk: false, combined: [] };
+
+    let msg = { to: '', addrLine: '', isMail: true, isSms: false, noSms: true, isLong: true, isShort: false, subject: '', text: '', count: '', hasNote: false, note: '', sendLabel: 'Senden' };
+    if (hasMsg) {
+      const m = selItem.msg;
+      const st = this.msgState(selItem.id, m);
+      const noSms = !m.mobile || !m.sms;
+      const ch = noSms ? 'mail' : st.channel;
+      const text = ch === 'sms' ? st.sms : (st.variant === 'short' ? st.short : st.long);
+      const id = selItem.id;
+      msg = {
+        to: m.to,
+        addrLine: ch === 'sms' ? 'Mobil: ' + m.mobile : m.addr,
+        isMail: ch === 'mail', isSms: ch === 'sms', noSms: noSms,
+        isLong: st.variant === 'long', isShort: st.variant === 'short',
+        mailStyle: smallSeg(ch === 'mail'), smsStyle: smallSeg(ch === 'sms'),
+        longStyle: smallSeg(st.variant === 'long'), shortStyle: smallSeg(st.variant === 'short'),
+        setMail: () => this.patchMsg(id, m, { channel: 'mail' }),
+        setSms: () => this.patchMsg(id, m, { channel: 'sms' }),
+        setLong: () => this.patchMsg(id, m, { variant: 'long' }),
+        setShort: () => this.patchMsg(id, m, { variant: 'short' }),
+        subject: st.subject,
+        onSubject: (e) => this.patchMsg(id, m, { subject: e.target.value }),
+        text: text,
+        onText: (e) => {
+          const key = ch === 'sms' ? 'sms' : (st.variant === 'short' ? 'short' : 'long');
+          const patch = {};
+          patch[key] = e.target.value;
+          this.patchMsg(id, m, patch);
+        },
+        count: ch === 'sms' ? text.length + ' / 160 Zeichen' : text.length + ' Zeichen',
+        hasNote: !!m.note, note: m.note || '',
+        sendLabel: ch === 'sms' ? 'SMS senden' : 'E-Mail senden',
+        send: () => {
+          const label = (ch === 'sms' ? 'SMS' : 'E-Mail') + ' an ' + m.dat + ' gesendet';
+          this.record({ id: id, title: selItem.title }, 'done', label);
+        }
+      };
+    }
+
+    const msgs = selItem ? (s.chats[selItem.id] || []) : [];
+    const messages = msgs.map((mm) => ({
+      text: mm.t,
+      rowStyle: 'display: flex; justify-content: ' + (mm.r === 'u' ? 'flex-end' : 'flex-start') + ';',
+      bubbleStyle: 'max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-line; ' + (mm.r === 'u' ? 'background: #B5006B; color: #FFFFFF; border-bottom-right-radius: 4px;' : 'background: #F7EEF3; color: #1E1A22; border-bottom-left-radius: 4px;')
+    }));
+    const asked = msgs.filter((mm) => mm.r === 'u').map((mm) => mm.t);
+    const chips = selItem ? selItem.chips.filter((ch) => asked.indexOf(ch.q) === -1).map((ch) => ({ q: ch.q, pick: () => this.addChat(selItem.id, ch.q, ch.a) })) : [];
+
+    const badge = (o) => {
+      const t = { Erledigt: ['#E3F1F8', '#0B5C80'], Info: ['#F3EEF1', '#5E5460'], Ausgeblendet: ['#F3EEF1', '#5E5460'] }[o];
+      return 'font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: ' + t[0] + '; color: ' + t[1] + ';';
+    };
+    const allLog = s.log.concat(d.initialLog);
+    const fmap = { all: null, done: ['Erledigt'], info: ['Info'], dismissed: ['Ausgeblendet'] };
+    const shown = allLog.filter((e) => !fmap[s.logFilter] || fmap[s.logFilter].indexOf(e.outcome) !== -1);
+    const logRows = shown.map((e) => ({ time: e.time, who: e.who, text: e.text, outcome: e.outcome, badgeStyle: badge(e.outcome) }));
+    const fBase = 'min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500;';
+    const filters = [['all', 'Alle'], ['done', 'Gesendet & erledigt'], ['info', 'ibelsa Live-Log'], ['dismissed', 'Ausgeblendet']].map((f) => ({
+      label: f[1], on: s.logFilter === f[0],
+      style: fBase + (s.logFilter === f[0] ? ' background: #B5006B; color: #FFFFFF; border: 1px solid #B5006B;' : ' background: #FFFFFF; color: #3B3340; border: 1px solid #E3D3DD;'),
+      pick: () => this.setState({ logFilter: f[0] })
+    }));
+
+    const v = s.view;
+    const eyebrows = { today: 'Samstag, 7. November · ' + (s.role === 'front' ? 'Spätschicht Rezeption' : 'Management'), analytics: 'Aus ibelsa, TOURDATA und offenen Datensätzen', data: 'Was die App nutzt – und was nicht', log: 'Samstag, 7. November' };
+    const headings = { today: 'Guten Abend, ' + person.name + '.', analytics: 'Wie läuft das Hotel?', data: 'Datenquellen', log: 'Schicht-Log' };
+    return {
+      initials: person.initials,
+      personName: person.name,
+      eyebrow: eyebrows[v],
+      heading: headings[v],
+      feedTitle: s.role === 'front' ? 'Persönliche Angebote für Ihre Gäste' : 'Chancen für das Haus',
+      isFront: s.role === 'front', isManager: s.role === 'manager',
+      roleFrontStyle: s.role === 'front' ? segOn : segOff,
+      roleManagerStyle: s.role === 'manager' ? segOn : segOff,
+      setFront: () => this.setRole('front'),
+      setManager: () => this.setRole('manager'),
+      navTodayStyle: v === 'today' ? navOn : navOff,
+      navAnalyticsStyle: v === 'analytics' ? navOn : navOff,
+      navDataStyle: v === 'data' ? navOn : navOff,
+      navLogStyle: v === 'log' ? navOn : navOff,
+      goToday: () => this.setState({ view: 'today', selected: null }),
+      goAnalytics: () => this.setState({ view: 'analytics', selected: null }),
+      goData: () => this.setState({ view: 'data', selected: null }),
+      goLog: () => this.setState({ view: 'log', selected: null }),
+      isToday: v === 'today', isAnalytics: v === 'analytics', isData: v === 'data', isLog: v === 'log',
+      openCards: openCards,
+      openLabel: open.length === 0 ? 'Nichts offen' : (open.length === 1 ? '1 offen' : open.length + ' offen'),
+      allClear: open.length === 0,
+      hasHandled: handled.length > 0,
+      handledCards: handledCards,
+      showArrivals: s.role === 'front',
+      showKpis: s.role === 'manager',
+      arrivals: d.arrivals.map((a) => ({ room: a.room, name: a.name, meta: a.meta, tags: a.tags.map((t) => ({ name: t })) })),
+      miniKpis: d.miniKpis.map((k) => ({ label: k.label, value: k.value, delta: k.delta, deltaStyle: 'font-size: 11px; line-height: 1.35; color: ' + toneColor(k.tone) + ';' })),
+      miniDays: dayBars(d.days.slice(0, 19), 3),
+      kpiTiles: kpiTiles,
+      kpi: kpi,
+      sources: d.sources.map((x) => ({
+        name: x.name, kind: x.kind, status: x.status,
+        statusStyle: 'flex: 0 0 auto; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; ' + (x.live ? 'background: #E3F1F8; color: #0B5C80;' : 'background: #FFF3E0; color: #8A5300;'),
+        fields: x.fields.map((f) => ({ name: f, style: this.tagStyle(x.name !== 'ibelsa.rooms') }))
+      })),
+      rules: d.rules.map((r) => ({ when: r.when, then: r.then, tags: r.tags.map((t) => ({ name: t.n, style: this.tagStyle(t.ext) })) })),
+      hasSelected: !!selItem,
+      sel: sel,
+      showMsg: !!selItem && tab === 'msg',
+      showAsk: !!selItem && tab === 'ask',
+      tabMsgOn: tab === 'msg', tabAskOn: tab === 'ask',
+      tabMsgStyle: tabStyle(tab === 'msg'), tabAskStyle: tabStyle(tab === 'ask'),
+      showMsgTab: () => this.setState({ tab: 'msg' }),
+      showAskTab: () => this.setState({ tab: 'ask' }),
+      msg: msg,
+      messages: messages,
+      chips: chips,
+      draft: s.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onSubmit: (e) => {
+        e.preventDefault();
+        const q = (this.state.draft || '').trim();
+        if (!q || !selItem) return;
+        this.setState({ draft: '' });
+        this.addChat(selItem.id, q, 'In der fertigen Version beantworte ich das direkt aus ibelsa, TOURDATA und den offenen Datensätzen. Für die Demo nutze bitte eine der vorgeschlagenen Fragen.');
+      },
+      closePanel: () => this.setState({ selected: null }),
+      logRows: logRows,
+      logEmpty: logRows.length === 0,
+      filters: filters,
+      hasToast: !!s.toast,
+      toastText: s.toast ? s.toast.text : '',
+      undo: () => this.undo()
+    };
+  }
+}
+</script>
+</body>
+</html>
