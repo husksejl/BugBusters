@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Domino — Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--m:#B5006B;--m2:#FF3EA5;--md:#8A0052;--b:#0B6F99;--bl:#8ACFEF;--o:#F0940A;--ink:#1E1A22;--mut:#6A5F69;--bg:#F5EFF3;--line:#EADDE5;--ease:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#120E15;font-family:'Inter',system-ui,sans-serif;color:var(--ink)}
+button{font-family:inherit;cursor:pointer}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;position:relative;overflow:hidden;border-radius:18px;transform-origin:center;background:#120E15}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .7s var(--ease)}
+.scene.on{opacity:1;pointer-events:auto}
+.rv{opacity:0;transform:translateY(22px);filter:blur(6px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease);transition-delay:calc(var(--d,0)*1s)}
+.scene.on .rv{opacity:1;transform:none;filter:none}
+.dark{background:radial-gradient(900px 520px at 15% 115%,#3a0a2e 0%,transparent 60%),radial-gradient(900px 520px at 90% 110%,#0d2a46 0%,transparent 60%),#13111C;color:#fff}
+.light{background:var(--bg)}
+.h{font-family:'Poppins',sans-serif;letter-spacing:-.025em;font-weight:600;margin:0}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--m2)}
+.grad{background:linear-gradient(90deg,#FF7EC2,#C8A8F0 50%,#8ECFF0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--m2),var(--m));color:#fff;display:flex;align-items:center;justify-content:center;font-family:Poppins;font-weight:600;font-size:18px}
+
+/* chrome */
+#bar{position:absolute;left:0;top:0;height:3px;background:linear-gradient(90deg,#FF7EC2,#8ECFF0);transition:width .6s var(--ease);z-index:90}
+#hud{position:absolute;right:20px;bottom:16px;display:flex;gap:8px;align-items:center;z-index:90}
+#hud button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(30,26,34,.55);color:#fff;backdrop-filter:blur(8px);font-size:16px}
+#hud .cnt{font-size:12px;color:rgba(255,255,255,.6);min-width:46px;text-align:center;font-variant-numeric:tabular-nums;background:rgba(30,26,34,.55);padding:6px 10px;border-radius:99px}
+#timer{position:absolute;left:20px;bottom:16px;z-index:90;font-size:12px;color:rgba(255,255,255,.6);background:rgba(30,26,34,.55);padding:6px 12px;border-radius:99px;font-variant-numeric:tabular-nums;cursor:pointer}
+#notes{position:absolute;left:20px;right:20px;bottom:60px;z-index:95;background:rgba(18,14,21,.92);color:#fff;border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.5;display:none;border:1px solid rgba(255,255,255,.12)}
+#notes b{color:var(--m2)}
+#notes.show{display:block}
+.hint{position:absolute;top:18px;right:22px;font-size:11px;color:rgba(255,255,255,.4);z-index:90}
+.light~.hint{color:var(--mut)}
+
+/* S1 hook */
+.s1 .center{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 120px;gap:26px}
+.s1 .time{font-size:15px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.s1 .big{font-size:58px;line-height:1.12;max-width:980px}
+.s1 .sub{font-size:22px;color:rgba(255,255,255,.65);max-width:760px;line-height:1.5}
+.guest{display:inline-flex;align-items:center;gap:14px;padding:14px 20px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);width:max-content}
+.guest .av{width:42px;height:42px;border-radius:50%;background:#2b2230;display:flex;align-items:center;justify-content:center;font-weight:600;color:#FF8FCB}
+.guest small{display:block;color:rgba(255,255,255,.5);font-size:13px}
+.secret{position:relative;cursor:pointer}
+.secret .cake{display:inline-block;margin-left:10px;padding:4px 10px;border-radius:99px;background:rgba(255,62,165,.18);color:#FF8FCB;font-size:13px;opacity:0;transform:scale(.6);transition:.5s var(--ease)}
+.secret.rev .cake{opacity:1;transform:none}
+
+/* S2 data noise */
+.s2 .stream{position:absolute;inset:0;overflow:hidden;opacity:.55;mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+.s2 .col{position:absolute;top:0;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:rgba(255,255,255,.35);white-space:nowrap;line-height:2;animation:up 26s linear infinite}
+.s2 .col span.hit{color:#FF8FCB;text-shadow:0 0 12px rgba(255,62,165,.7)}
+@keyframes up{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.s2 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:22px;background:radial-gradient(520px 280px at 50% 50%,rgba(18,14,21,.95),rgba(18,14,21,.3))}
+.s2 .big{font-size:56px;line-height:1.12}
+.s2 .sub{font-size:21px;color:rgba(255,255,255,.65);max-width:720px;line-height:1.5}
+.stats{display:flex;gap:16px;margin-top:8px}
+.stat{padding:16px 22px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);text-align:left;min-width:190px}
+.stat b{font-family:Poppins;font-size:30px;display:block}
+.stat span{font-size:13px;color:rgba(255,255,255,.55)}
+
+/* S3 turn */
+.s3 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:30px}
+.s3 .q{font-size:60px;line-height:1.12;max-width:1000px}
+.s3 .brand{display:flex;align-items:center;gap:14px;font-family:Poppins;font-size:30px;font-weight:600}
+.s3 .brand .logo{width:58px;height:58px;font-size:24px;border-radius:16px;box-shadow:0 0 0 0 rgba(255,62,165,.5);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,62,165,.45)}70%{box-shadow:0 0 0 26px rgba(255,62,165,0)}100%{box-shadow:0 0 0 0 rgba(255,62,165,0)}}
+.s3 .tag{font-size:19px;color:rgba(255,255,255,.6);max-width:640px;line-height:1.5}
+
+/* App shell (demo) */
+.app{position:absolute;inset:0;display:flex;background:var(--bg)}
+.side{width:84px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:22px 0;gap:8px}
+.side .logo{width:38px;height:38px;font-size:15px;border-radius:11px;margin-bottom:14px}
+.nav{width:66px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mut)}
+.nav.on{background:#FDF0F6;color:var(--m)}
+.nav i{width:18px;height:18px;border-radius:5px;border:1.6px solid currentColor;display:block}
+.main{flex:1;padding:30px 40px;display:flex;flex-direction:column;gap:20px;position:relative;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:flex-end}
+.top small{font-size:12px;color:var(--mut)}
+.top h2{font-family:Poppins;font-size:28px;font-weight:600;letter-spacing:-.02em;margin:4px 0 0}
+.seg{display:flex;background:#EDE2E9;border-radius:12px;padding:4px;gap:4px}
+.seg span{padding:9px 14px;border-radius:9px;font-size:12px;font-weight:500;color:#5E5460}
+.seg span.on{background:#fff;color:var(--m);box-shadow:0 1px 3px rgba(30,26,34,.12)}
+.strip{display:flex;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.strip div{flex:1;padding:12px 18px;border-right:1px solid #F1E8EE}
+.strip div:last-child{border:none}
+.strip small{display:block;font-size:11px;color:var(--mut)}
+.strip b{font-size:19px;font-weight:500}
+.cols{display:flex;gap:22px;flex:1;min-height:0}
+.feed{flex:1.7;display:flex;flex-direction:column;gap:12px;min-width:0}
+.feed h3{font-family:Poppins;font-size:15px;margin:0;display:flex;justify-content:space-between}
+.feed h3 span{font-family:Inter;font-weight:400;font-size:12px;color:var(--mut)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;transition:all .55s var(--ease);max-height:400px;overflow:hidden}
+.card.gone{max-height:0;padding-top:0;padding-bottom:0;opacity:0;margin-top:-12px;border-width:0}
+.card.focus{border-color:var(--m);box-shadow:0 0 0 4px rgba(181,0,107,.1)}
+.lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center}
+.lbl i{width:7px;height:7px;border-radius:50%;display:block}
+.lbl em{font-style:normal;color:var(--mut);text-transform:none;letter-spacing:0;font-weight:400}
+.card h4{margin:0;font-size:16px;font-weight:500;line-height:1.4}
+.card p{margin:0;font-size:13px;color:#5E5460;line-height:1.5}
+.offer{padding:9px 12px;border-radius:11px;background:#FDF3F8;border:1px solid #F6DCEA;font-size:12.5px;color:#6A0040}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tg{font-size:10.5px;font-weight:500;padding:3px 8px;border-radius:99px;background:#FDF0F6;color:var(--md)}
+.tg.x{background:#E6F2F8;color:#0B5C80}
+.acts{display:flex;gap:8px;align-items:center}
+.btn{min-height:38px;padding:0 16px;border:none;border-radius:10px;background:var(--m);color:#fff;font-size:13px;font-weight:500;position:relative}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid #E3D3DD}
+.btn.pulse::after{content:'';position:absolute;inset:-4px;border-radius:13px;border:2px solid var(--m2);animation:ring 1.6s infinite}
+@keyframes ring{0%{opacity:.9;transform:scale(.96)}100%{opacity:0;transform:scale(1.12)}}
+.rail{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.box h5{font-family:Poppins;font-size:13.5px;margin:0 0 8px;display:flex;justify-content:space-between}
+.box h5 span{font-family:Inter;font-weight:400;font-size:10px;color:var(--mut)}
+.arr{display:flex;gap:12px;padding:9px 0;border-top:1px solid #F3EBF0;font-size:12.5px}
+.arr b{color:var(--b);width:30px}
+.arr small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
+.arr .tg{margin-top:5px;display:inline-block}
+.done{display:flex;flex-direction:column;gap:6px}
+.dn{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #F1E8EE;font-size:13px;animation:pop .5s var(--ease)}
+.dn i{width:20px;height:20px;border-radius:50%;background:#E3F1F8;color:var(--b);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scrim{position:absolute;inset:0;background:rgba(30,26,34,.34);opacity:0;pointer-events:none;transition:.3s;z-index:20}
+.drawer{position:absolute;top:14px;right:14px;bottom:14px;width:430px;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(30,26,34,.3);z-index:21;display:flex;flex-direction:column;overflow:hidden;transform:translateX(470px);transition:transform .5s var(--ease)}
+.open .scrim{opacity:1;pointer-events:auto}
+.open .drawer{transform:none}
+.dh{background:linear-gradient(135deg,#C4007A,#9A005B);color:#fff;padding:16px 20px;display:flex;flex-direction:column;gap:6px}
+.dh small{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.dh b{font-weight:500;font-size:15px;line-height:1.4}
+.db{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.to{padding:10px 12px;border-radius:12px;background:#FCF9FB;border:1px solid #F3EBF0;font-size:12px;color:var(--mut)}
+.to b{display:block;color:var(--ink);font-weight:500;font-size:13px}
+.msg{flex:1;border:1px solid #E3D3DD;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;white-space:pre-line;color:var(--ink)}
+.msg .cur{display:inline-block;width:2px;height:15px;background:var(--m);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.df{border-top:1px solid #F1E8EE;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;background:#FCF9FB;font-size:11px;color:var(--mut)}
+.toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,30px);opacity:0;background:var(--ink);color:#fff;border-radius:12px;padding:12px 18px;font-size:13px;z-index:30;transition:.45s var(--ease);display:flex;gap:10px;align-items:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.callout{position:absolute;z-index:40;background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;max-width:300px;line-height:1.45;box-shadow:0 12px 30px rgba(30,26,34,.3);opacity:0;transform:translateY(8px);transition:.6s var(--ease)}
+.callout.show{opacity:1;transform:none}
+.callout b{color:#FF8FCB}
+
+/* S5 fusion */
+.s5{background:radial-gradient(700px 420px at 35% 55%,#2c0b28,transparent 70%),radial-gradient(700px 420px at 70% 50%,#0d2a46,transparent 70%),#13111C}
+.s5 .head{position:absolute;top:56px;left:0;right:0;text-align:center;color:#fff}
+.s5 .head h2{font-size:42px}
+.s5 .head p{color:rgba(255,255,255,.6);font-size:18px;margin:10px 0 0}
+.src{position:absolute;width:250px;padding:16px 18px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#fff;transition:all 1s var(--ease);cursor:pointer}
+.src small{font-size:10.5px;font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:99px;background:rgba(255,62,165,.2);color:#FF8FCB}
+.src.x small{background:rgba(138,207,239,.2);color:var(--bl)}
+.src b{display:block;font-weight:500;font-size:15px;margin-top:10px;line-height:1.4}
+.src:hover{border-color:rgba(255,255,255,.4)}
+.fused .src{left:515px !important;top:330px !important;opacity:0;transform:scale(.5)}
+.core{position:absolute;left:640px;top:370px;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--m2);box-shadow:0 0 40px 20px rgba(255,62,165,.4);opacity:0;transition:.6s}
+.fused .core{opacity:1;transition-delay:.7s}
+.result{position:absolute;left:340px;top:250px;width:600px;background:#fff;border-radius:20px;padding:24px 26px;display:flex;flex-direction:column;gap:12px;opacity:0;transform:scale(.85);transition:all .8s var(--ease);pointer-events:none}
+.fused .result{opacity:1;transform:none;transition-delay:1.2s;pointer-events:auto}
+.fused .core{animation:fade 2s forwards 1.2s}
+@keyframes fade{to{opacity:0}}
+.fuse-btn{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:linear-gradient(135deg,var(--m2),var(--m));color:#fff;border:none;border-radius:99px;padding:14px 26px;font-size:15px;font-weight:500;transition:.4s}
+.fused .fuse-btn{opacity:0;pointer-events:none}
+.lines{position:absolute;inset:0;pointer-events:none}
+
+/* S6 manager */
+.chart{display:flex;align-items:flex-end;gap:4px;height:190px;border-bottom:1px solid #DCCFD7;position:relative}
+.chart .d{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.chart .c{background:var(--bl);height:0;transition:height .9s var(--ease);border-radius:3px 3px 0 0}
+.chart .o{background:var(--o);height:0;transition:height .9s var(--ease);border-radius:3px 3px 0 0}
+.chart .t .c{background:var(--b)}
+.gap{position:absolute;top:-6px;bottom:0;border:2px dashed var(--m);border-radius:10px;background:rgba(181,0,107,.05);opacity:0;transition:.6s;cursor:pointer}
+.gap.show{opacity:1}
+.gap span{position:absolute;top:10px;left:12px;font-size:12px;font-weight:600;color:var(--m)}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kp div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.kp small{font-size:11px;color:var(--mut);display:block}
+.kp b{font-family:Poppins;font-size:24px;display:block;margin:4px 0 2px}
+.kp em{font-style:normal;font-size:11px;font-weight:500}
+.adv{opacity:0;transform:translateX(30px);transition:.7s var(--ease);pointer-events:none}
+.adv.show{opacity:1;transform:none;pointer-events:auto}
+
+/* S7 trust */
+.s7 .wrap{position:absolute;inset:0;padding:70px 100px;display:flex;flex-direction:column;gap:34px}
+.s7 h2{font-size:44px;max-width:900px;line-height:1.15}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rule{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px;font-size:15px;cursor:pointer;transition:.3s}
+.rule:hover{border-color:var(--m);transform:translateY(-2px)}
+.rule .ar{color:var(--m);font-weight:600}
+.rule b{font-weight:500;color:var(--md)}
+.rule .tags{display:none;margin-top:8px}
+.rule.open .tags{display:flex}
+.nope{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--mut)}
+.nope span{padding:6px 12px;border-radius:99px;background:#EDE5EA;text-decoration:line-through}
+.srcs{display:flex;gap:10px;flex-wrap:wrap}
+.pill{padding:8px 14px;border-radius:99px;font-size:13px;font-weight:500;background:#FDF0F6;color:var(--md);display:flex;gap:8px;align-items:center}
+.pill.x{background:#E6F2F8;color:#0B5C80}
+.pill i{font-style:normal;font-size:10px;opacity:.7}
+
+/* S8 close */
+.s8 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;text-align:center}
+.s8 .big{font-size:64px;line-height:1.08;max-width:1050px}
+.pillars{display:flex;gap:16px}
+.pl{width:250px;padding:20px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff}
+.pl b{font-family:Poppins;font-size:19px;display:block;margin-bottom:6px}
+.pl span{font-size:14px;color:rgba(255,255,255,.6);line-height:1.45}
+.recap{font-size:18px;color:rgba(255,255,255,.65)}
+.recap b{color:#FF8FCB;font-weight:500}
+.confetti{position:absolute;width:8px;height:14px;border-radius:2px;top:-20px;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(780px) rotate(720deg)}}
+
+:root{--navy:#1F2B4D;--sky:#8ECFF0;--amber:#F0A63A}
+.side .tile{width:30px;height:50px;margin-bottom:14px}
+.word{font-family:'Poppins',sans-serif;font-weight:500;color:var(--navy);letter-spacing:-.02em;line-height:1;display:inline-flex;align-items:flex-end}
+.wi{position:relative;display:inline-block;width:.2em;height:.74em;margin:0 .07em .02em}
+.wi .ws{position:absolute;left:0;right:0;bottom:0;height:.5em;background:var(--navy);border-radius:.04em}
+.wi .wd{position:absolute;left:-.02em;right:-.02em;top:0;height:.15em;background:var(--navy);border-radius:.05em}
+.lockup{display:inline-flex;align-items:center;gap:20px;position:relative}
+.lockup::before{content:'';position:absolute;inset:-30px -60px;background:radial-gradient(closest-side,rgba(142,207,240,.14),transparent);z-index:-1}
+.lockup .tile{width:46px;height:77px}
+.lockup .word{font-size:64px}
+.dark .lockup .word{color:#F1EDE6}
+.dark .lockup .wi .ws{background:#F1EDE6}
+.lockup.sm{gap:14px}
+.lockup.sm .tile{width:28px;height:47px}.lockup.sm .word{font-size:36px}
+/* animation */
+.tile{overflow:visible}
+.tile *{transform-box:fill-box}
+.scene.on .anim .tile{animation:tip 1s cubic-bezier(.3,1.4,.5,1) both;animation-delay:var(--ad,1s);transform-origin:50% 100%}
+.scene.on .anim .b1,.scene.on .anim .b2,.scene.on .anim .b3{transform-origin:50% 100%;animation:grow .6s var(--ease) both}
+.scene.on .anim .b1{animation-delay:calc(var(--ad,1s) + .7s)}.scene.on .anim .b2{animation-delay:calc(var(--ad,1s) + .85s)}.scene.on .anim .b3{animation-delay:calc(var(--ad,1s) + 1s)}
+.scene.on .anim .td{transform-origin:50% 50%;animation:popd .5s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--ad,1s) + .55s)}
+.scene.on .anim .wd{animation:drop .8s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(var(--ad,1s) + 1.25s)}
+.anim .tile:hover{animation:wobble .6s}
+@keyframes tip{0%{transform:rotate(-75deg) translate(-30px,-40px);opacity:0}55%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes grow{from{transform:scaleY(0)}to{transform:none}}
+@keyframes popd{from{transform:scale(0)}to{transform:none}}
+@keyframes drop{0%{transform:translateY(-1.2em);opacity:0}100%{transform:none;opacity:1}}
+@keyframes wobble{30%{transform:rotate(-8deg)}60%{transform:rotate(5deg)}}
+
+.s9 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px;text-align:center}
+.s9 h2{font-size:52px;color:#fff}
+.team{display:flex;gap:26px}
+.mem{width:260px;padding:30px 24px 26px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;gap:14px;transition:transform .4s var(--ease),border-color .4s}
+.mem:hover{transform:translateY(-6px);border-color:rgba(142,207,240,.45)}
+.mem .av{width:96px;height:96px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#FF7EC2,#8ECFF0)}
+.mem .av span{width:100%;height:100%;border-radius:50%;background:#1A1724;display:flex;align-items:center;justify-content:center;font-family:Poppins;font-size:32px;font-weight:600;color:#fff}
+.mem b{font-family:Poppins;font-size:22px;font-weight:600;color:#fff}
+.mem small{font-size:14px;color:rgba(255,255,255,.6)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<div id="bar"></div>
+
+<!-- S1 HOOK -->
+<section class="scene dark s1" data-note="<b>0:00–0:15</b> Slow. Let it land. Click the guest card to reveal the birthday. “Meet Alexander Eggers. He checks in tonight, room 211. Tomorrow he turns 48. His hotel knows that. It's right there in the system. But nobody at the front desk will ever see it.”">
+  <div class="center">
+    <div class="time rv" style="--d:.1">Saturday, 7 November · 17:42 · Front desk, late shift</div>
+    <div class="guest rv secret" id="g1" style="--d:.4">
+      <div class="av">AE</div>
+      <div>Alexander Eggers <span class="cake">🎂 turns 48 tomorrow</span><small>Check-in today · Room 211 · DZ Superior · 1 night</small></div>
+    </div>
+    <h1 class="h big rv" style="--d:.8">His hotel <span class="grad">knows</span> it's his birthday tomorrow.</h1>
+    <p class="sub rv" style="--d:1.3">Nobody at the front desk will ever find out.</p>
+  </div>
+</section>
+
+<!-- S2 PROBLEM -->
+<section class="scene dark s2" data-note="<b>0:15–0:30</b> “Hotels already know a lot about their guests: birthdays, how long they stay, when the house is empty. But nobody has time to look during a busy shift. The data knows. The staff doesn't have time to ask.”">
+  <div class="stream" id="stream"></div>
+  <div class="center">
+    <div class="eyebrow rv" style="--d:.1">The problem</div>
+    <h2 class="h big rv" style="--d:.3">The data knows.<br>The staff doesn't.</h2>
+    <p class="sub rv" style="--d:.6">Hotels already know so much about their guests, but it is buried where nobody has time to look mid-shift.</p>
+    <div class="stats rv" style="--d:.9">
+      <div class="stat"><b>7</b><span>guests with birthdays this week</span></div>
+      <div class="stat"><b>&lt;15&nbsp;%</b><span>occupancy from 18 Nov</span></div>
+      <div class="stat"><b>0</b><span>of them noticed in time</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- S3 TURN -->
+<section class="scene dark s3" data-note="<b>0:30–0:40</b> The turn. Pause after the question. “So we asked: what if the hotel could give guests what they want, before they even know they want it? Meet domino. It tries to find out what guests want before they know they want it.”">
+  <div class="center">
+    <h2 class="h q rv" style="--d:.1">What if you could give guests what they want <span class="grad">before they know they need it?</span></h2>
+    <div class="rv anim" style="--d:.9;--ad:1.1s"><div class="lockup"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect class="tb" x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle class="td" cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect class="tl" x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect class="b1" x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect class="b2" x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect class="b3" x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><span class="word">dom<span class="wi"><i class="wd"></i><i class="ws"></i></span>no</span></div></div>
+    <div class="tag rv" style="--d:1.2">It tries to find out what guests want <span style="color:#fff">before they know they want it</span>, and turns it into a short daily list of personal moments.</div>
+  </div>
+</section>
+
+<!-- S4 LIVE DEMO: FRONT DESK -->
+<section class="scene light s4" data-note="<b>0:40–1:05</b> LIVE DEMO. “This is Anna's screen tonight. No reports, no filters. Just: who should I surprise, and why.” → click <b>Prepare message</b> on Eggers → “The message is already written.” → click <b>Send</b>. “Ten seconds. One guest who'll remember this hotel.”">
+  <div class="app" id="app4">
+    <nav class="side"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect class="tb" x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle class="td" cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect class="tl" x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect class="b1" x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect class="b2" x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect class="b3" x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><div class="nav on"><i style="border-radius:50%"></i>Today</div><div class="nav"><i></i>Insights</div><div class="nav"><i></i>Data</div><div class="nav"><i></i>Log</div></nav>
+    <div class="main">
+      <div class="top rv" style="--d:.1"><div><small>Saturday, 7 November · Late shift, front desk</small><h2>Good evening, Anna.</h2></div><div class="seg"><span class="on">Front desk</span><span>Management</span></div></div>
+      <div class="strip rv" style="--d:.25"><div><small>Arrivals</small><b>4</b></div><div><small>Departures</small><b>3</b></div><div><small>Occupancy today</small><b>82 %</b></div><div><small>Tomorrow</small><b>🌧 Rain · 9 °C</b></div></div>
+      <div class="cols">
+        <div class="feed">
+          <h3 class="rv" style="--d:.4">Personal offers for your guests <span id="openCnt">3 open</span></h3>
+          <div class="card focus rv" id="cEggers" style="--d:.55">
+            <div class="lbl" style="color:var(--m)"><i style="background:var(--m)"></i>Important today <em>· Arrives today · Room 211</em></div>
+            <h4>Mr Alexander Eggers arrives today and has his birthday tomorrow.</h4>
+            <p>He turns 48 and stays one night. A surprise in the morning makes a short stay special.</p>
+            <div class="offer"><b>Offer:</b> Birthday breakfast with a glass of sparkling wine</div>
+                        <div class="acts"><button class="btn pulse" id="prep">✉ Prepare message</button><button class="btn ghost">Why?</button></div>
+          </div>
+          <div class="card rv" id="cKlar" style="--d:.7">
+            <div class="lbl" style="color:var(--b)"><i style="background:var(--b)"></i>Today <em>· Arrives today · Room 116</em></div>
+            <h4>Ms Marina Klar arrives today. Her birthday was Thursday, and tomorrow it rains.</h4>
+            </div>
+          <div class="done" id="done4"></div>
+        </div>
+        <div class="rail">
+          <div class="box rv" style="--d:.6"><h5>Arrivals today</h5>
+            <div class="arr"><b>116</b><div>Ms Marina Klar<small>DZ Standard · until 10 Nov</small><span class="tg">Repeat guest</span></div></div>
+            <div class="arr"><b>211</b><div>Mr Alexander Eggers<small>DZ Superior · until 8 Nov</small><span class="tg">Birthday tomorrow</span></div></div>
+            <div class="arr"><b>117</b><div>Mr Peter Pfeffer<small>EZ Standard · until 11 Nov</small></div></div>
+          </div>
+          <div class="box rv" style="--d:.75"><h5>Around the hotel</h5><div style="font-size:12.5px;line-height:1.8;color:#3B3340">♨ Thermal spa nearby · daily 9–22<br>🎄 Advent market · from 20 Nov</div></div>
+        </div>
+      </div>
+      <div class="scrim" id="scrim4"></div>
+      <aside class="drawer">
+        <div class="dh"><small>Personal offer · Important today</small><b>Mr Alexander Eggers arrives today and has his birthday tomorrow.</b></div>
+        <div class="db">
+          <div class="to">To<b>Mr Alexander Eggers</b>alexander.eggers@example.com · Email · Personal</div>
+          <div class="msg" id="msgTxt"></div>
+        </div>
+        <div class="df">Saved to the shift log<button class="btn pulse" id="send">Send email →</button></div>
+      </aside>
+      <div class="toast" id="toast4">✓ Email sent to Mr Eggers <span style="opacity:.5">· logged</span></div>
+      <div class="callout" id="co4" style="left:640px;top:120px">Written in seconds, <b>before the guest asked for anything</b>. Anna only checks and sends.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S5 FUSION -->
+<section class="scene s5" data-note="<b>1:05–1:20</b> “Like dominoes: small things that seem unrelated. Click <b>Connect</b>.” → “Her birthday was on Thursday, tomorrow it rains, there's a spa nearby. Together: a belated birthday wish with spa tickets for a rainy day. She didn't know she wanted that. Now she does.”">
+  <div class="head"><div class="eyebrow rv" style="--d:.1">The domino effect</div><h2 class="h rv" style="--d:.25">Three small things. One unforgettable moment.</h2><p class="rv" style="--d:.4">Ms Marina Klar · arrives today · room 116</p></div>
+  <div id="fz">
+    <div class="src rv" style="left:110px;top:270px;--d:.6"><small>🎂 BIRTHDAY</small><b>Her birthday was<br>on Thursday</b></div>
+    <div class="src x rv" style="left:515px;top:210px;--d:.8"><small>🌧 TOMORROW</small><b>Rain all day,<br>9 °C</b></div>
+    <div class="src x rv" style="left:920px;top:270px;--d:1"><small>♨ NEARBY</small><b>Thermal spa,<br>open daily 9–22</b></div>
+    <div class="core"></div>
+    <div class="result">
+      <div class="lbl" style="color:var(--b)"><i style="background:var(--b)"></i>Today <em>· generated just now</em></div>
+      <h4 style="margin:0;font-size:20px;font-weight:500;line-height:1.35">“Happy belated birthday, Ms Klar! It's raining tomorrow. Shall we reserve spa tickets for you?”</h4>
+      <div class="offer" style="font-size:14px"><b>Offer:</b> Belated birthday wish + thermal spa tickets</div>
+      </div>
+    <button class="fuse-btn rv" style="--d:1.3" id="fuse">✦ Connect</button>
+  </div>
+</section>
+
+<!-- S6 MANAGER -->
+<section class="scene light s6" data-note="<b>1:20–1:40</b> “Same idea, for the manager.” Bars grow. Click the <b>dashed gap</b>. “From 18 November the house is almost empty. But the Advent market starts on the 20th. So domino suggests an Advent package for past guests, ready to send. The hotel fills the gap before it costs anything.”">
+  <div class="app">
+    <nav class="side"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect class="tb" x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle class="td" cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect class="tl" x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect class="b1" x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect class="b2" x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect class="b3" x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><div class="nav"><i style="border-radius:50%"></i>Today</div><div class="nav on"><i></i>Insights</div><div class="nav"><i></i>Data</div><div class="nav"><i></i>Log</div></nav>
+    <div class="main">
+      <div class="top rv" style="--d:.1"><div><small>Management · Saturday, 7 November</small><h2>How is the hotel doing, Markus?</h2></div><div class="seg"><span>Front desk</span><span class="on">Management</span></div></div>
+      <div class="kp rv" style="--d:.25">
+        <div style="border-color:var(--m);box-shadow:0 0 0 3px rgba(181,0,107,.12)"><small>Occupancy next 14 days</small><b>40 %</b><em style="color:var(--m)">Below 15 % from 18 Nov</em></div>
+        <div><small>Direct bookings, 7 days</small><b>64 %</b><em style="color:var(--b)">Homepage + direct</em></div>
+        <div><small>Birthdays, next 7 days</small><b>7</b><em style="color:var(--mut)">2 in house</em></div>
+        <div><small>Repeat guests in Nov</small><b>6</b><em style="color:var(--b)">2+ stays</em></div>
+      </div>
+      <div class="cols">
+        <div class="box rv" style="--d:.4;flex:1.6;padding:20px 22px">
+          <h5 style="font-size:15px">Occupancy 4 Nov – 4 Dec <span><b style="color:var(--bl)">■</b> Booked &nbsp;<b style="color:var(--o)">■</b> Option &nbsp;<b style="color:var(--b)">■</b> Today</span></h5>
+          <div class="chart" id="chart"><div class="gap" id="gap"><span>Click me · 18 Nov → empty</span></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-top:6px"><span>4 Nov</span><span>11 Nov</span><span>18 Nov</span><span>25 Nov</span><span>4 Dec</span></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+          <div class="card adv" id="adv" style="border-color:var(--m)">
+            <div class="lbl" style="color:var(--m)"><i style="background:var(--m)"></i>Important today <em>· 18 Nov – 4 Dec</em></div>
+            <h4>Occupancy drops below 15 % from 18 November.</h4>
+            <p>At the same time the Advent market opens in town. A good reason for a package for past guests.</p>
+            <div class="offer"><b>Offer:</b> Advent package, 2 nights with breakfast</div>
+                        <div class="acts"><button class="btn pulse" id="advSend">Send to past guests</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="toast" id="toast6">✓ Advent package queued for past guests</div>
+    </div>
+  </div>
+</section>
+
+<!-- S7 TRUST -->
+<section class="scene light s7" data-note="<b>1:40–1:50</b> “Behind every suggestion is a simple, understandable idea. domino proposes, staff decide. Nothing goes out without a human.” (Click a rule to show an example.)">
+  <div class="wrap">
+    <div><div class="eyebrow rv" style="--d:.1;color:var(--m)">Simple ideas, human touch</div><h2 class="h rv" style="--d:.2"><span class="word">dom<span class="wi"><i class="wd"></i><i class="ws"></i></span>no</span> suggests. <span style="color:var(--m)">Your team decides.</span></h2></div>
+    <div class="rules">
+      <div class="rule rv" style="--d:.35"><div>Birthday during or just before the stay <span class="ar">→</span> <b>Wish + small extra</b><div class="tags"><span class="tg">e.g. Mr Eggers · birthday breakfast</span></div></div></div>
+      <div class="rule rv" style="--d:.45"><div>Long stay + better room free <span class="ar">→</span> <b>Upgrade offer before arrival</b><div class="tags"><span class="tg">e.g. the Habers · 8 nights · suite</span></div></div></div>
+      <div class="rule rv" style="--d:.55"><div>Rain on a stay day <span class="ar">→</span> <b>Indoor tip from the region</b><div class="tags"><span class="tg">e.g. Ms Klar · spa tickets</span></div></div></div>
+      <div class="rule rv" style="--d:.65"><div>Corporate guest checks out <span class="ar">→</span> <b>Direct booking at company rate</b><div class="tags"><span class="tg">e.g. Mr Köhler · company rate</span></div></div></div>
+    </div>
+    <div class="srcs rv" style="--d:.8"><span class="pill">✓ Every message editable</span><span class="pill">✓ Nothing sent without a click</span><span class="pill">✓ Everything in the shift log</span></div>
+  </div>
+</section>
+
+<!-- S9 TEAM -->
+<section class="scene dark s9" data-note="<b>Team</b> “We're Melisa, Yana and Sejla, the minds behind domino.”">
+  <div class="center">
+    <div><div class="eyebrow rv" style="--d:.1;color:#C8A8F0">The team</div><h2 class="h rv" style="--d:.25;margin-top:10px">The minds behind <span class="grad">domino</span></h2></div>
+    <div class="team">
+      <div class="mem rv" style="--d:.6"><div class="av"><span>M</span></div><b>Melisa</b><small>Software Engineer</small></div>
+      <div class="mem rv" style="--d:.8"><div class="av"><span>S</span></div><b>Sejla</b><small>UX &amp; Design</small></div>
+      <div class="mem rv" style="--d:1"><div class="av"><span>Y</span></div><b>Yana</b><small>Software Engineer</small></div>
+    </div>
+  </div>
+</section>
+<!-- S8 CLOSE -->
+<section class="scene dark s8" data-note="<b>1:50–2:00</b> Slow down. “Tomorrow morning, Mr Eggers gets a birthday breakfast he never asked for. And he'll book again. domino: the right moment, before the guest even knows they want it. Thank you.”">
+  <div class="center">
+    <div class="recap rv" style="--d:.1">Tomorrow, 8:00 · Room 211 · <b>🎂 Birthday breakfast for Mr Eggers</b></div>
+    <h2 class="h big rv" style="--d:.4">Deliver the moment <span class="grad">before the guest knows they want it.</span></h2>
+    <div class="pillars">
+      <div class="pl rv" style="--d:.8"><b>For the front desk</b><span>A short list of personal moments per shift, with the message already written.</span></div>
+      <div class="pl rv" style="--d:.95"><b>For management</b><span>Gaps and chances spotted early, with the next step ready to go.</span></div>
+      <div class="pl rv" style="--d:1.1"><b>For the guest</b><span>A hotel that feels like it remembers them.</span></div>
+    </div>
+    <div class="rv anim" style="--d:1.4;--ad:1.6s;display:flex;align-items:center;gap:22px"><div class="lockup sm"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect class="tb" x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle class="td" cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect class="tl" x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect class="b1" x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect class="b2" x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect class="b3" x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><span class="word">dom<span class="wi"><i class="wd"></i><i class="ws"></i></span>no</span></div><span style="color:rgba(255,255,255,.6);font-size:20px">Thank you.</span></div>
+  </div>
+</section>
+
+
+<div id="notes"></div>
+<div class="hint">→ / Space next · N notes · F fullscreen</div>
+<div id="timer" title="Click to reset">⏱ 0:00 / 2:00</div>
+<div id="hud"><button id="prev" aria-label="Previous">‹</button><span class="cnt" id="cnt">1 / 9</span><button id="next" aria-label="Next">›</button></div>
+</div></div>
+
+<script>
+const S=[...document.querySelectorAll('.scene')];let cur=-1;
+const stage=document.getElementById('stage');
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform='scale('+s+')';stage.style.borderRadius=s>=.99&&innerWidth/innerHeight>1.7?'0':'18px'}
+addEventListener('resize',fit);fit();
+
+// stream for S2
+(function(){const rows=['RES #1042 · Pfeffer, Peter · EZ Std · 07.11–11.11','BDAY · Eggers, Alexander · 08.11 · 48','SRC · Buchungsportal · 24%','OCC 18.11 · 6% · OPT 6%','RES #12 · Köhler AG · DZ Std · 05.11–07.11','BDAY · Klar, Marina · 05.11 · 44','CONTACT · marketing_consent=true','RATE · Firmenrate · active','RES #1051 · Haber, Max · 10.11–18.11','AVAIL · Suite · 10.11–18.11 · free','OCC 23.11 · 0%','BDAY · Seifert, Ute · 08.11','PRODUCT · Frühstück · 18,00','LOG 15:57 · Theiss, Tom · DZ Std'];
+const st=document.getElementById('stream');for(let c=0;c<5;c++){const d=document.createElement('div');d.className='col';d.style.left=(c*260+20)+'px';d.style.animationDuration=(22+c*4)+'s';d.style.animationDelay=(-c*3)+'s';let h='';for(let i=0;i<60;i++){const r=rows[(i*7+c*3)%rows.length];h+=(r.startsWith('BDAY · Eggers')?'<span class="hit">'+r+'</span>':r)+'<br>'}d.innerHTML=h+h;st.appendChild(d)}})();
+
+// chart S6
+const days=[[6,0],[29,0],[76,0],[82,0],[71,0],[47,0],[59,0],[71,0],[59,0],[24,0],[18,12],[35,12],[53,12],[35,0],[12,0],[6,6],[6,6],[6,6],[6,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]];
+const ch=document.getElementById('chart');days.forEach((v,i)=>{const d=document.createElement('div');d.className='d'+(i===3?' t':'');d.innerHTML='<div class="o"></div><div class="c"></div>';ch.appendChild(d)});
+const gap=document.getElementById('gap');gap.style.left=(14/31*100)+'%';gap.style.right='0';
+
+const timers=[];function later(f,ms){timers.push(setTimeout(f,ms))}
+function clearT(){timers.forEach(clearTimeout);timers.length=0}
+
+const enter={
+ 0(){const g=document.getElementById('g1');g.classList.remove('rev');later(()=>g.classList.add('rev'),2600)},
+ 3(){reset4()},
+ 4(){document.getElementById('fz').classList.remove('fused')},
+ 5(){const bars=ch.querySelectorAll('.d');bars.forEach(b=>{b.querySelector('.c').style.height='0';b.querySelector('.o').style.height='0'});gap.classList.remove('show');document.getElementById('adv').classList.remove('show');document.getElementById('toast6').classList.remove('show');
+   later(()=>bars.forEach((b,i)=>setTimeout(()=>{b.querySelector('.c').style.height=days[i][0]+'%';b.querySelector('.o').style.height=days[i][1]+'%'},i*35)),700);
+   later(()=>gap.classList.add('show'),2300)},
+ 8(){burst()}
+};
+function go(i){if(i<0||i>=S.length||i===cur)return;clearT();S.forEach(s=>s.classList.remove('on'));cur=i;
+ // restart reveal
+ const s=S[i];void s.offsetWidth;s.classList.add('on');
+ document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+ document.getElementById('cnt').textContent=(i+1)+' / '+S.length;
+ document.getElementById('notes').innerHTML=s.dataset.note||'';
+ enter[i]&&enter[i]();if(!started)startTimer()}
+document.getElementById('next').onclick=e=>{e.stopPropagation();go(cur+1)};
+document.getElementById('prev').onclick=e=>{e.stopPropagation();go(cur-1)};
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(cur+1)}else if(['ArrowLeft','PageUp'].includes(e.key))go(cur-1);else if(e.key==='n'||e.key==='N')document.getElementById('notes').classList.toggle('show');else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}});
+// click empty space on narrative scenes advances
+S.forEach((s,i)=>s.addEventListener('click',e=>{if(e.target.closest('button,.card,.src,.rule,.gap,.guest,.drawer,.scrim'))return;if(s.classList.contains('dark'))go(cur+1)}));
+
+// timer
+let started=false,t0=0,tick;function startTimer(){started=true;t0=Date.now();tick=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);const el=document.getElementById('timer');el.textContent='⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' / 2:00';el.style.color=s>120?'#FF8FCB':''},500)}
+document.getElementById('timer').onclick=()=>{t0=Date.now()};
+
+// S1 reveal on click
+document.getElementById('g1').onclick=e=>{e.currentTarget.classList.toggle('rev')};
+
+// S4 demo
+const app4=document.getElementById('app4'),msgEl=document.getElementById('msgTxt');
+const MSG='Dear Mr Eggers,\n\nlovely to have you with us today! Tomorrow is your birthday, so happy birthday in advance.\n\nWe would love to surprise you with a birthday breakfast and a glass of sparkling wine. Just let us know whether you would like it in the breakfast room or in room 211.\n\nWarm regards,\nAnna, front desk';
+let typing;
+function reset4(){app4.classList.remove('open');clearInterval(typing);document.getElementById('cEggers').classList.remove('gone');document.getElementById('done4').innerHTML='';document.getElementById('openCnt').textContent='3 open';document.getElementById('toast4').classList.remove('show');document.getElementById('co4').classList.remove('show');document.getElementById('prep').classList.add('pulse')}
+document.getElementById('prep').onclick=()=>{document.getElementById('prep').classList.remove('pulse');app4.classList.add('open');msgEl.innerHTML='<span class="cur"></span>';let k=0;clearInterval(typing);
+ setTimeout(()=>{typing=setInterval(()=>{k+=3;msgEl.innerHTML=MSG.slice(0,k).replace(/</g,'&lt;')+'<span class="cur"></span>';if(k>=MSG.length){clearInterval(typing);msgEl.textContent=MSG}},14)},450)};
+document.getElementById('scrim4').onclick=()=>app4.classList.remove('open');
+document.getElementById('send').onclick=()=>{clearInterval(typing);msgEl.textContent=MSG;app4.classList.remove('open');
+ later(()=>{document.getElementById('cEggers').classList.add('gone');document.getElementById('openCnt').textContent='2 open';document.getElementById('toast4').classList.add('show')},350);
+ later(()=>{document.getElementById('done4').innerHTML='<div style="font-size:12px;color:var(--mut);padding-top:4px">Done this shift</div><div class="dn"><i>✓</i><span style="flex:1">Email sent to Mr Eggers · birthday breakfast</span><small style="color:var(--mut)">17:43</small></div>'},900);
+ later(()=>document.getElementById('co4').classList.add('show'),1300);
+ later(()=>document.getElementById('toast4').classList.remove('show'),4200)};
+
+// S5 fusion
+document.getElementById('fuse').onclick=()=>document.getElementById('fz').classList.add('fused');
+document.querySelector('.s5 .result').onclick=()=>document.getElementById('fz').classList.remove('fused');
+
+// S6
+gap.onclick=()=>document.getElementById('adv').classList.add('show');
+document.getElementById('advSend').onclick=e=>{e.target.classList.remove('pulse');e.target.textContent='✓ Queued';document.getElementById('toast6').classList.add('show');later(()=>document.getElementById('toast6').classList.remove('show'),3800)};
+
+// S7 rules
+document.querySelectorAll('.rule').forEach(r=>r.onclick=()=>r.classList.toggle('open'));
+
+// S8 confetti
+function burst(){const s=S[8];const cs=['#FF3EA5','#B5006B','#8ACFEF','#F0940A','#fff'];for(let i=0;i<70;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*1280+'px';c.style.background=cs[i%cs.length];c.style.animationDuration=(2.4+Math.random()*2.4)+'s';c.style.animationDelay=(Math.random()*1.2)+'s';s.appendChild(c);setTimeout(()=>c.remove(),6500)}}
+
+go(0);
+</script>
+</body>
+</html>
