@@ -567,7 +567,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
-class Component extends DCLogic {
+const WEBHOOK = "https://n8n.oi.destination.one/webhook/team-11-ask";
+
+  class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = { role: 'front', view: 'today', status: {}, selected: null, tab: 'msg', chats: {}, toast: null, log: [], n: 0, draft: '', logFilter: 'all', kpi: 'occ', msgs: {} };
@@ -812,6 +814,32 @@ class Component extends DCLogic {
     this.setState({ chats: chats });
   }
 
+    async askClaude(item, q) {
+    const id = item.id;
+    const before = Object.assign({}, this.state.chats);
+    before[id] = (before[id] || []).concat([{ r: 'u', t: q }, { r: 'a', t: 'Einen Moment …' }]);
+    this.setState({ chats: before });
+    let answer;
+    try {
+      const context = item.title + '\n' + item.combined.map((k) => k.src + ': ' + k.detail).join('\n');
+      const res = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: 'Kontext:\n' + context + '\n\nFrage: ' + q })
+      });
+      if (!res.ok) throw new Error('Status ' + res.status);
+      const data = await res.json();
+      answer = data.answer || data.text || 'Keine Antwort erhalten.';
+    } catch (err) {
+      answer = 'Die Antwort konnte gerade nicht geladen werden. Bitte noch einmal versuchen.';
+    }
+    const after = Object.assign({}, this.state.chats);
+    const list = (after[id] || []).slice();
+    list[list.length - 1] = { r: 'a', t: answer };
+    after[id] = list;
+    this.setState({ chats: after });
+  }
+
   setRole(r) { this.setState({ role: r, selected: null, draft: '' }); }
 
   open(id, tab) { this.setState({ selected: id, tab: tab, draft: '' }); }
@@ -1054,7 +1082,7 @@ class Component extends DCLogic {
         const q = (this.state.draft || '').trim();
         if (!q || !selItem) return;
         this.setState({ draft: '' });
-        this.addChat(selItem.id, q, 'In der fertigen Version beantworte ich das direkt aus ibelsa, TOURDATA und den offenen Datensätzen. Für die Demo nutze bitte eine der vorgeschlagenen Fragen.');
+        this.askClaude(selItem, q);
       },
       closePanel: () => this.setState({ selected: null }),
       logRows: logRows,
