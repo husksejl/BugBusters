@@ -29,6 +29,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 .content{padding:24px 18px 96px !important}
 .drawer{top:0 !important;right:0 !important;bottom:0 !important;max-width:100% !important;border-radius:0 !important}
 }
+.typing{display:inline-flex;gap:4px;align-items:center;height:18px}
+.typing span{width:6px;height:6px;border-radius:50%;background:#B5006B;opacity:.35;animation:typingDot 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes typingDot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion: reduce){.typing span{animation:none;opacity:.6}}
 </style>
 </helmet>
 <div style="min-height: 100vh; background: #F5EFF3; color: #1E1A22; font-family: 'Inter', system-ui, -apple-system, sans-serif; display: flex; flex-wrap: wrap; box-sizing: border-box; font-size: 14px;">
@@ -520,7 +526,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
       </sc-if>
 
       <sc-if value="{{showAsk}}" hint-placeholder-val="{{ false }}">
-        <div style="flex: 1 1 auto; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+        <div id="chat-scroll" class="chat-scroll" style="flex: 1 1 auto; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <span style="font-size: 12px; color: #6A5F69;">Diese Daten wurden kombiniert</span>
             <sc-for list="{{sel.combined}}" as="k" hint-placeholder-count="3">
@@ -536,7 +542,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
           </div>
           <sc-for list="{{messages}}" as="m" hint-placeholder-count="0">
             <div style="{{m.rowStyle}}">
-              <div style="{{m.bubbleStyle}}">{{m.text}}</div>
+              <div style="{{m.bubbleStyle}}"><sc-if value="{{m.isTyping}}" hint-placeholder-val="{{ false }}"><span class="typing" role="status" aria-label="Antwort wird geladen"><span></span><span></span><span></span></span></sc-if><sc-if value="{{m.notTyping}}" hint-placeholder-val="{{ true }}"><span style="white-space: pre-line;">{{m.text}}</span></sc-if></div>
             </div>
           </sc-for>
         </div>
@@ -567,7 +573,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
-class Component extends DCLogic {
+const WEBHOOK = "https://n8n.oi.destination.one/webhook/team-11-ask";
+
+  class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = { role: 'front', view: 'today', status: {}, selected: null, tab: 'msg', chats: {}, toast: null, log: [], n: 0, draft: '', logFilter: 'all', kpi: 'occ', msgs: {} };
@@ -812,6 +820,51 @@ class Component extends DCLogic {
     this.setState({ chats: chats });
   }
 
+  scrollChat() {
+    const find = (root) => {
+      const hit = root.querySelector('.chat-scroll');
+      if (hit) return hit;
+      for (const n of root.querySelectorAll('*')) {
+        if (n.shadowRoot) {
+          const h = find(n.shadowRoot);
+          if (h) return h;
+        }
+      }
+      return null;
+    };
+    const go = () => {
+      const el = find(document);
+      if (el) el.scrollTop = el.scrollHeight;
+    };
+    setTimeout(go, 50);
+    setTimeout(go, 300);
+  }
+    async askClaude(item, q) {
+    const id = item.id;
+    const before = Object.assign({}, this.state.chats);
+    before[id] = (before[id] || []).concat([{ r: 'u', t: q }, { r: 'a', t: '', typing: true }]);
+    this.setState({ chats: before });
+    let answer;
+    try {
+      const context = item.title + '\n' + item.combined.map((k) => k.src + ': ' + k.detail).join('\n');
+      const res = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: 'Kontext:\n' + context + '\n\nFrage: ' + q })
+      });
+      if (!res.ok) throw new Error('Status ' + res.status);
+      const data = await res.json();
+      answer = data.answer || data.text || 'Keine Antwort erhalten.';
+    } catch (err) {
+      answer = 'Die Antwort konnte gerade nicht geladen werden. Bitte noch einmal versuchen.';
+    }
+    const after = Object.assign({}, this.state.chats);
+    const list = (after[id] || []).slice();
+    list[list.length - 1] = { r: 'a', t: answer };
+    after[id] = list;
+    this.setState({ chats: after });
+  }
+
   setRole(r) { this.setState({ role: r, selected: null, draft: '' }); }
 
   open(id, tab) { this.setState({ selected: id, tab: tab, draft: '' }); }
@@ -974,8 +1027,10 @@ class Component extends DCLogic {
     const msgs = selItem ? (s.chats[selItem.id] || []) : [];
     const messages = msgs.map((mm) => ({
       text: mm.t,
+      isTyping: !!mm.typing,
+      notTyping: !mm.typing,
       rowStyle: 'display: flex; justify-content: ' + (mm.r === 'u' ? 'flex-end' : 'flex-start') + ';',
-      bubbleStyle: 'max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-line; ' + (mm.r === 'u' ? 'background: #B5006B; color: #FFFFFF; border-bottom-right-radius: 4px;' : 'background: #F7EEF3; color: #1E1A22; border-bottom-left-radius: 4px;')
+      bubbleStyle: 'max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; ' + (mm.r === 'u' ? 'background: #B5006B; color: #FFFFFF; border-bottom-right-radius: 4px;' : 'background: #F7EEF3; color: #1E1A22; border-bottom-left-radius: 4px;')
     }));
     const asked = msgs.filter((mm) => mm.r === 'u').map((mm) => mm.t);
     const chips = selItem ? selItem.chips.filter((ch) => asked.indexOf(ch.q) === -1).map((ch) => ({ q: ch.q, pick: () => this.addChat(selItem.id, ch.q, ch.a) })) : [];
@@ -1054,7 +1109,7 @@ class Component extends DCLogic {
         const q = (this.state.draft || '').trim();
         if (!q || !selItem) return;
         this.setState({ draft: '' });
-        this.addChat(selItem.id, q, 'In der fertigen Version beantworte ich das direkt aus ibelsa, TOURDATA und den offenen Datensätzen. Für die Demo nutze bitte eine der vorgeschlagenen Fragen.');
+        this.askClaude(selItem, q);
       },
       closePanel: () => this.setState({ selected: null }),
       logRows: logRows,
