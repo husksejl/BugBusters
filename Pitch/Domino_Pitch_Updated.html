@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>domino · Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--m:#B5006B;--m2:#FF3EA5;--md:#8A0052;--b:#0B6F99;--bl:#8ACFEF;--o:#F0940A;--ink:#1E1A22;--mut:#6A5F69;--bg:#F5EFF3;--line:#EADDE5;--ease:cubic-bezier(.2,.8,.2,1);--navy:#1F2B4D;--sky:#8ECFF0}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#120E15;font-family:'Inter',system-ui,sans-serif;color:var(--ink)}
+button{font-family:inherit;cursor:pointer}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;position:relative;overflow:hidden;border-radius:18px;transform-origin:center;background:#120E15;flex:none}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .7s var(--ease)}
+.scene.on{opacity:1;pointer-events:auto}
+.rv{opacity:0;transform:translateY(22px);filter:blur(6px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease);transition-delay:calc(var(--d,0)*1s)}
+.scene.on .rv{opacity:1;transform:none;filter:none}
+.dark{background:radial-gradient(900px 520px at 15% 115%,#3a0a2e 0%,transparent 60%),radial-gradient(900px 520px at 90% 110%,#0d2a46 0%,transparent 60%),#13111C;color:#fff}
+.light{background:var(--bg)}
+.h{font-family:'Poppins',sans-serif;letter-spacing:-.025em;font-weight:600;margin:0}
+.eyebrow{font-size:14px;font-weight:600;color:var(--m2)}
+.grad{background:linear-gradient(90deg,#FF7EC2,#C8A8F0 50%,#8ECFF0);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* chrome */
+#bar{position:absolute;left:0;top:0;height:3px;background:linear-gradient(90deg,#FF7EC2,#8ECFF0);transition:width .6s var(--ease);z-index:90}
+#hud{position:absolute;right:20px;bottom:16px;display:flex;gap:8px;align-items:center;z-index:90}
+#hud button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(30,26,34,.55);color:#fff;backdrop-filter:blur(8px);font-size:16px}
+#hud .cnt{font-size:12px;color:rgba(255,255,255,.6);min-width:46px;text-align:center;font-variant-numeric:tabular-nums;background:rgba(30,26,34,.55);padding:6px 10px;border-radius:99px}
+#timer{position:absolute;left:20px;bottom:16px;z-index:90;font-size:12px;color:rgba(255,255,255,.6);background:rgba(30,26,34,.55);padding:6px 12px;border-radius:99px;font-variant-numeric:tabular-nums;cursor:pointer}
+#notes{position:absolute;left:20px;right:20px;bottom:60px;z-index:95;background:rgba(18,14,21,.92);color:#fff;border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.5;display:none;border:1px solid rgba(255,255,255,.12)}
+#notes b{color:var(--m2)}
+#notes.show{display:block}
+.hint{position:absolute;top:18px;right:22px;font-size:11px;color:rgba(255,255,255,.4);z-index:90}
+
+/* night sky */
+.sky{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.2;animation:tw 3s ease-in-out infinite alternate}
+@keyframes tw{to{opacity:.85}}
+.meteor{position:absolute;width:150px;height:2px;border-radius:2px;background:linear-gradient(90deg,#fff,rgba(255,190,230,.6) 30%,rgba(255,255,255,0));transform-origin:0 50%;opacity:0;animation:shoot linear infinite}
+@keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(-35deg)}3%{opacity:1}20%{opacity:0;transform:translate(-520px,364px) rotate(-35deg)}100%{opacity:0;transform:translate(-520px,364px) rotate(-35deg)}}
+
+/* 1 · PROBLEM */
+.p1 .stream{position:absolute;inset:0;overflow:hidden;opacity:.45;mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+.p1 .col{position:absolute;top:0;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:rgba(255,255,255,.3);white-space:nowrap;line-height:2;animation:up 26s linear infinite}
+.p1 .col span.hit{color:#FF8FCB;text-shadow:0 0 12px rgba(255,62,165,.7)}
+.p1 .col span.ev{color:var(--bl);text-shadow:0 0 12px rgba(138,207,239,.6)}
+@keyframes up{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.p1 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:26px;background:radial-gradient(900px 480px at 50% 50%,rgba(18,14,21,.98) 55%,rgba(18,14,21,.55))}
+.p1 .big{font-size:36px;line-height:1.25;max-width:1100px}
+.p1 .sub{font-size:17px;color:rgba(255,255,255,.68);line-height:1.5;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.guest{display:inline-flex;align-items:center;gap:14px;padding:12px 20px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);width:max-content;cursor:pointer;text-align:left}
+.guest .av{width:42px;height:42px;border-radius:50%;background:#2b2230;display:flex;align-items:center;justify-content:center;font-weight:600;color:#FF8FCB}
+.guest small{display:block;color:rgba(255,255,255,.5);font-size:13px;margin-top:2px}
+.guest .chip{display:inline-block;margin-left:10px;padding:4px 10px;border-radius:99px;background:rgba(255,62,165,.18);color:#FF8FCB;font-size:13px;opacity:0;transform:scale(.6);transition:.5s var(--ease)}
+.guest.rev .chip{opacity:1;transform:none}
+.pieces{display:flex;align-items:center}
+.pc{width:220px;padding:14px 18px;border-radius:16px;background:rgba(19,17,28,.85);border:1px solid rgba(255,255,255,.12);text-align:left}
+.pc small,.src small{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;background:rgba(255,62,165,.2);color:#FF8FCB}
+.pc.x small,.src.x small{background:rgba(138,207,239,.2);color:var(--bl)}
+.pc.o small,.src.o small{background:rgba(240,148,10,.2);color:#F7B955}
+.pc b{display:block;font-weight:500;font-size:15px;margin-top:10px;line-height:1.4}
+.brk{width:60px;display:flex;align-items:center;justify-content:center;gap:4px;color:rgba(255,255,255,.4);font-size:13px}
+.brk span{width:14px;border-top:2px dashed rgba(255,255,255,.25)}
+.cut{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(255,62,165,.16);color:#FF8FCB;font-weight:600;font-size:15px}
+
+/* 2 + 3 · DASHBOARDS */
+.app{position:absolute;inset:0;display:flex;background:var(--bg)}
+.side{width:84px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:22px 0;gap:8px}
+.side .tile{width:26px;height:43px;margin-bottom:14px}
+.nav{width:66px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--mut)}
+.nav.on{background:#FDF0F6;color:var(--m)}
+.nav i{width:18px;height:18px;border-radius:5px;border:1.6px solid currentColor;display:block}
+.main{flex:1;padding:30px 40px 66px;display:flex;flex-direction:column;gap:18px;position:relative;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:flex-end}
+.top small{font-size:12px;color:var(--mut)}
+.top h2{font-family:Poppins;font-size:26px;font-weight:600;letter-spacing:-.02em;margin:4px 0 0}
+.seg{display:flex;background:#EDE2E9;border-radius:12px;padding:4px;gap:4px}
+.seg span{padding:8px 14px;border-radius:9px;font-size:12px;font-weight:500;color:#5E5460}
+.seg span.on{background:#fff;color:var(--m);box-shadow:0 1px 3px rgba(30,26,34,.12)}
+.strip{display:flex;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.strip div{flex:1;padding:12px 18px;border-right:1px solid #F1E8EE}
+.strip div:last-child{border:none}
+.strip small{display:block;font-size:11px;color:var(--mut)}
+.strip b{font-size:16px;font-weight:500}
+.cols{display:flex;gap:18px;flex:1;min-height:0}
+.feed{flex:1.6;display:flex;flex-direction:column;gap:12px;min-width:0}
+.feed h3{font-family:Poppins;font-size:15px;margin:0;display:flex;justify-content:space-between;align-items:baseline}
+.feed h3 span{font-family:Inter;font-weight:400;font-size:12px;color:var(--mut)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;transition:all .55s var(--ease);max-height:400px;overflow:hidden}
+.card.gone{box-shadow:none !important;max-height:0;padding-top:0;padding-bottom:0;opacity:0;margin-top:-12px;border-width:0}
+.card.focus{border-color:var(--m);box-shadow:0 0 0 4px rgba(181,0,107,.1)}
+.lbl{font-size:12px;font-weight:600;display:flex;gap:8px;align-items:center}
+.lbl i{width:7px;height:7px;border-radius:50%;display:block}
+.lbl em{font-style:normal;color:var(--mut);font-weight:400}
+.card h4{margin:0;font-size:16px;font-weight:500;line-height:1.4}
+.card p{margin:0;font-size:13px;color:#5E5460;line-height:1.5}
+.offer{padding:9px 12px;border-radius:11px;background:#FDF3F8;border:1px solid #F6DCEA;font-size:12.5px;color:#6A0040}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tg{font-size:11px;font-weight:500;padding:3px 8px;border-radius:99px;background:#FDF0F6;color:var(--md)}
+.tg.x{background:#E6F2F8;color:#0B5C80}
+.tg.o{background:#FDF1E0;color:#8A5300}
+.acts{display:flex;gap:8px;align-items:center}
+.btn{min-height:38px;padding:0 16px;border:none;border-radius:10px;background:var(--m);color:#fff;font-size:13px;font-weight:500;position:relative}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid #E3D3DD}
+.btn.pulse::after{content:'';position:absolute;inset:-4px;border-radius:13px;border:2px solid var(--m2);animation:ring 1.6s infinite}
+@keyframes ring{0%{opacity:.9;transform:scale(.96)}100%{opacity:0;transform:scale(1.12)}}
+.rail{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.box h5{font-family:Poppins;font-size:13.5px;margin:0 0 6px;display:flex;justify-content:space-between;align-items:baseline}
+.box h5 span{font-family:Inter;font-weight:400;font-size:11px;color:var(--mut)}
+.arr{display:flex;gap:12px;padding:8px 0;border-top:1px solid #F3EBF0;font-size:12.5px}
+.arr b{color:var(--b);width:18px}
+.arr small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
+.arr .tg{margin-top:5px;display:inline-block}
+.done{display:flex;flex-direction:column;gap:6px}
+.dn{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #F1E8EE;font-size:13px;animation:pop .5s var(--ease)}
+.dn i{width:20px;height:20px;border-radius:50%;background:#E3F1F8;color:var(--b);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scrim{position:absolute;inset:0;background:rgba(30,26,34,.34);opacity:0;pointer-events:none;transition:.3s;z-index:20}
+.drawer{position:absolute;top:14px;right:14px;bottom:66px;width:440px;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(30,26,34,.3);z-index:21;display:flex;flex-direction:column;overflow:hidden;transform:translateX(480px);transition:transform .5s var(--ease)}
+.open .scrim{opacity:1;pointer-events:auto}
+.open .drawer{transform:none}
+.dh{background:linear-gradient(135deg,#C4007A,#9A005B);color:#fff;padding:16px 20px;display:flex;flex-direction:column;gap:6px}
+.dh small{font-size:12px;font-weight:600;opacity:.9;display:flex;gap:8px;align-items:center}
+.dh small span{padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.2);font-size:11px}
+.dh b{font-weight:500;font-size:15px;line-height:1.4}
+.db{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.to{padding:10px 12px;border-radius:12px;background:#FCF9FB;border:1px solid #F3EBF0;font-size:12px;color:var(--mut)}
+.to b{display:block;color:var(--ink);font-weight:500;font-size:13px}
+.msg{flex:1;border:1px solid #E3D3DD;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;white-space:pre-line;color:var(--ink);overflow:auto;outline:none}
+.msg:focus{border-color:var(--m)}
+.msg .cur{display:inline-block;width:2px;height:15px;background:var(--m);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.df{border-top:1px solid #F1E8EE;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;background:#FCF9FB;font-size:11px;color:var(--mut)}
+.toast{position:absolute;left:50%;bottom:76px;transform:translate(-50%,30px);opacity:0;background:var(--ink);color:#fff;border-radius:12px;padding:12px 18px;font-size:13px;z-index:30;transition:.45s var(--ease);white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.callout{position:absolute;z-index:40;background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;max-width:290px;line-height:1.45;box-shadow:0 12px 30px rgba(30,26,34,.3);opacity:0;transform:translateY(8px);transition:.6s var(--ease);pointer-events:none}
+.callout.show{opacity:1;transform:none}
+.callout b{color:#FF8FCB;font-weight:500}
+.chart{display:flex;align-items:flex-end;gap:4px;flex:1;min-height:200px;margin-top:14px;border-bottom:1px solid #DCCFD7;position:relative}
+.chart .d{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.chart .c{background:var(--bl);height:0;transition:height .9s var(--ease);border-radius:3px 3px 0 0}
+.chart .t .c{background:var(--b)}
+.gap{position:absolute;top:-6px;bottom:0;left:37%;width:27%;border:2px dashed var(--m);border-radius:10px;background:rgba(181,0,107,.05);opacity:0;transition:.6s;cursor:pointer;z-index:2}
+.gap.show{opacity:1}
+.gap span{position:absolute;top:10px;left:0;right:0;text-align:center;font-size:12px;font-weight:600;color:var(--m)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-top:7px}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kp div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kp div.hi{border-color:var(--m);box-shadow:0 0 0 3px rgba(181,0,107,.1)}
+.kp small{font-size:11px;color:var(--mut);display:block}
+.kp b{font-family:Poppins;font-size:22px;font-weight:600;display:block;margin:4px 0 2px}
+.kp em{font-style:normal;font-size:11px;font-weight:500}
+.box.hl{border-color:var(--m);box-shadow:0 0 0 4px rgba(181,0,107,.12)}
+.adv{opacity:0;transform:translateX(30px);transition:.7s var(--ease);pointer-events:none}
+.adv.show{opacity:1;transform:none;pointer-events:auto}
+/* 3 · HOW IT WORKS */
+.s5 .wrap{position:absolute;inset:0;padding:50px 90px 70px;display:flex;flex-direction:column;justify-content:center;gap:34px}
+.s5 h2{font-size:34px;line-height:1.2;margin-top:6px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.fl{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 20px;position:relative;display:flex;flex-direction:column;align-items:flex-start}
+.fl em{font-style:normal;font-size:12px;font-weight:600;color:var(--bl)}
+.fl b{display:block;font-family:Poppins;font-size:18px;font-weight:600;margin:4px 0 6px;color:#fff}
+.fl span{font-size:15px;color:rgba(255,255,255,.68);line-height:1.45;display:block;margin-bottom:12px}
+.fl:not(:last-child)::after{content:'›';position:absolute;right:-9px;top:50%;transform:translate(50%,-50%);color:var(--m2);font-size:20px;font-weight:600}
+.fl.hu{border-color:var(--m2);box-shadow:0 0 0 3px rgba(255,62,165,.15)}
+.fl.hu em{color:#FF8FCB}
+.pills{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pills .k{font-size:13px;font-weight:600;color:var(--mut);margin-right:2px}
+.s5 .lead{font-size:16px;color:rgba(255,255,255,.65);margin:8px 0 0;line-height:1.5}
+.fl i{font-style:normal;display:inline-block;margin-top:auto;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75)}
+.fl i.ai{background:rgba(255,62,165,.18);color:#FF8FCB}
+.aitag{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:99px;background:#FDF0F6;color:var(--md);font-size:11px;font-weight:600}
+#ai{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:11px;color:rgba(255,255,255,.4);z-index:89;pointer-events:none}
+#ai.onlight{color:rgba(30,26,34,.45)}
+.pill{padding:8px 14px;border-radius:99px;font-size:13px;font-weight:500;background:#FDF0F6;color:var(--md)}
+.pill.x{background:#E6F2F8;color:#0B5C80}
+.val{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.vb{border-radius:18px;padding:22px 26px;color:#fff;background:linear-gradient(135deg,#C4007A,#8A0052)}
+.vb.x{background:linear-gradient(135deg,#0B6F99,#0A4462)}
+.vb small{font-size:13px;font-weight:600;opacity:.8}
+.vb b{display:block;font-family:Poppins;font-size:20px;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
+.vb span{font-size:14px;opacity:.85;line-height:1.45}
+
+/* 4 · TEAM & CLOSE */
+.s7{background:radial-gradient(900px 520px at 15% 115%,#3a0a2e 0%,transparent 60%),radial-gradient(900px 520px at 90% 110%,#0d2a46 0%,transparent 60%),#0E0C16;color:#fff}
+.s7 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+.s7 .big{font-size:36px;line-height:1.22;max-width:1000px}
+.recap{font-size:15px;color:rgba(255,255,255,.65)}
+.recap b{color:#FF8FCB;font-weight:500}
+.team{display:flex;gap:20px}
+.mem{width:210px;padding:22px 18px 20px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;gap:10px}
+.mem .av{width:68px;height:68px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#FF7EC2,#8ECFF0)}
+.mem .av span{width:100%;height:100%;border-radius:50%;background:#1A1724;display:flex;align-items:center;justify-content:center;font-family:Poppins;font-size:24px;font-weight:600;color:#fff}
+.mem b{font-family:Poppins;font-size:19px;font-weight:600;color:#fff}
+.mem small{font-size:13px;color:rgba(255,255,255,.6)}
+.close-row{display:flex;align-items:center;gap:26px}
+.thanks{font-size:18px;color:rgba(255,255,255,.7)}
+
+/* logo */
+.word{font-family:'Poppins',sans-serif;font-weight:500;color:var(--navy);letter-spacing:-.02em;line-height:1;display:inline-flex;align-items:flex-end}
+.wi{position:relative;display:inline-block;width:.2em;height:.74em;margin:0 .07em .02em}
+.wi .ws{position:absolute;left:0;right:0;bottom:0;height:.5em;background:var(--navy);border-radius:.04em}
+.wi .wd{position:absolute;left:-.02em;right:-.02em;top:0;height:.15em;background:var(--navy);border-radius:.05em}
+.lockup{display:inline-flex;align-items:center;gap:20px;position:relative}
+.lockup::before{content:'';position:absolute;inset:-30px -60px;background:radial-gradient(closest-side,rgba(142,207,240,.14),transparent);z-index:-1}
+.lockup .tile{width:46px;height:77px}
+.lockup .word{font-size:64px}
+.dark .word,.s4 .word,.s7 .word{color:#F1EDE6}
+.dark .wi .ws,.dark .wi .wd,.s4 .wi .ws,.s4 .wi .wd,.s7 .wi .ws,.s7 .wi .wd{background:#F1EDE6}
+.lockup.sm{gap:14px}
+.lockup.sm .tile{width:28px;height:47px}.lockup.sm .word{font-size:36px}
+.lockup.xs{gap:10px}
+.lockup.xs .tile{width:20px;height:33px}.lockup.xs .word{font-size:26px}
+.tile{overflow:visible}
+.tile *{transform-box:fill-box}
+.scene.on .anim .tile{animation:tip 1s cubic-bezier(.3,1.4,.5,1) both;animation-delay:var(--ad,1s);transform-origin:50% 100%}
+.scene.on .anim .b1,.scene.on .anim .b2,.scene.on .anim .b3{transform-origin:50% 100%;animation:grow .6s var(--ease) both}
+.scene.on .anim .b1{animation-delay:calc(var(--ad,1s) + .7s)}.scene.on .anim .b2{animation-delay:calc(var(--ad,1s) + .85s)}.scene.on .anim .b3{animation-delay:calc(var(--ad,1s) + 1s)}
+.scene.on .anim .td{transform-origin:50% 50%;animation:popd .5s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--ad,1s) + .55s)}
+.scene.on .anim .wd{animation:drop .8s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(var(--ad,1s) + 1.25s)}
+@keyframes tip{0%{transform:rotate(-75deg) translate(-30px,-40px);opacity:0}55%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes grow{from{transform:scaleY(0)}to{transform:none}}
+@keyframes popd{from{transform:scale(0)}to{transform:none}}
+@keyframes drop{0%{transform:translateY(-1.2em);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<div id="bar"></div>
+
+<!-- 1 · PROBLEM -->
+<section class="scene dark p1" data-note="<b></b> “This is Alexander. Last October he went hiking from a hotel in St. Gilgen, on Lake Wolfgangsee near Salzburg, and gave it five stars. The hotel knows him and what he liked. It knows which rooms are free. And nearby, there's always something going on. But nobody puts this together, so hotels resort to lowering their prices”">
+  <div class="stream" id="stream"></div>
+  <div class="center">
+    <div class="guest rv" id="g1" style="--d:.2">
+      <div class="av">AE</div>
+      <div>Alexander Eggers <span class="chip">★ 5/5 “I'll be back”</span><small>Stayed October 2025 in St. Gilgen, hiking weekend, 2 nights</small></div>
+    </div>
+    <h1 class="h big rv" style="--d:.5">Hotels have the data.<br><span class="grad">They're missing the opportunity.</span></h1>
+    <div class="pieces rv" style="--d:.9">
+      <div class="pc"><small>👤 Guest history</small><b>Who stayed, when,<br>and what they liked</b></div>
+      <div class="brk"><span></span>✕<span></span></div>
+      <div class="pc x"><small>🛏 Free rooms</small><b>40 rooms empty<br>next weekend</b></div>
+      <div class="brk"><span></span>✕<span></span></div>
+      <div class="pc o"><small>📍 Nearby</small><b>Events, festivals,<br>things to see</b></div>
+    </div>
+    <p class="sub rv" style="--d:1.2">This information lives in separate places. In low season, the usual answer is a discount <span class="cut">−20&nbsp;%</span></p>
+  </div>
+</section>
+
+<!-- 2 · WHAT THE HOTEL SEES -->
+<section class="scene light s6" data-note="<b>0:20–0:35 · What the hotel sees.</b> “This is what a hotel at Wolfgangsee sees on its dashboard. This weekend is busy. Next weekend, 12 and 13 December, forty rooms are still free. The hotel can see the gap, but not who might want to fill it, or why.” → click the <b>dashed area</b>. “The guest history and the local events are there. They're just not connected.”">
+<div class="app"><nav class="side"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><div class="nav"><i style="border-radius:50%"></i>Today</div><div class="nav on"><i></i>Occupancy</div><div class="nav"><i></i>Guests</div><div class="nav"><i></i>Data</div></nav>
+<div class="main">
+  <div class="top rv" style="--d:.1"><div><small>Hotel dashboard, St. Gilgen · illustrative data</small><h2>Next weekend still has 40 free rooms.</h2></div><div class="seg"><span>Front desk</span><span class="on">Management</span></div></div>
+  <div class="kp rv" style="--d:.25">
+    <div><small>Booked this weekend</small><b>82%</b><em style="color:var(--b)">Busy</em></div>
+    <div class="hi"><small>Free on 12–13 Dec</small><b>40 rooms</b><em style="color:var(--m)">Not booked yet</em></div>
+    <div><small>Guest history</small><b>Saved</b><em style="color:var(--mut)">Past stays and reviews</em></div>
+    <div><small>Events nearby</small><b>Not linked</b><em style="color:var(--mut)">Advent markets, concerts</em></div>
+  </div>
+  <div class="cols">
+    <div class="box rv" style="--d:.4;flex:1.6;padding:20px 22px;display:flex;flex-direction:column"><h5 style="font-size:15px">Occupancy, next three weeks <span>illustrative data</span></h5>
+      <div class="chart" id="chart"><div class="gap" id="gap"><span>40 rooms free · click</span></div></div>
+      <div class="axis"><span>This week</span><span>Next weekend, 12–13 Dec</span><span>Week after</span></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+      <div class="box rv" style="--d:.6"><h5>What the hotel can do today</h5>
+        <div class="arr"><b>1</b><div>Lower the price<small>Only helps if someone is already looking</small></div></div>
+        <div class="arr"><b>2</b><div>Wait for bookings<small>And hope the weekend fills up</small></div></div>
+      </div>
+      <div class="card adv" id="adv" style="border-color:var(--m)"><div class="lbl" style="color:var(--m)"><i style="background:var(--m)"></i>What's missing</div><h4>Which past guests would like to come next weekend, and why?</h4><p>The hotel has the guest history and knows about local events, but nothing connects the two.</p></div>
+    </div>
+  </div>
+</div></div></section>
+
+<!-- 3 · DOMINO DEMO -->
+<section class="scene light s4" data-note="<b>0:35–1:10 · domino.</b> “Now the same hotel with domino. It found a match: Alexander and other past guests who came for hiking, forty free rooms, and the Wolfgangsee Advent that weekend, with markets in three villages and boats between them.” → click <b>Why this match?</b> (the box on the right lights up). “Every match shows the data behind it.” Point to the second card. “It also notices things like birthdays: Marina's is on a quiet weekend, so the hotel can invite her to celebrate there.” → click <b>Prepare invitation</b>. “Our AI writes a first draft. Staff can edit it.” → click <b>Approve</b>. “Nothing goes out until someone at the hotel approves it.”">
+<div class="app" id="app4"><nav class="side"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><div class="nav on"><i style="border-radius:50%"></i>Today</div><div class="nav"><i></i>Occupancy</div><div class="nav"><i></i>Guests</div><div class="nav"><i></i>Data</div></nav>
+<div class="main">
+  <div class="top rv" style="--d:.1"><div><small>domino · Matches for your hotel · illustrative data</small><h2>Two new matches are ready for review.</h2></div><div class="seg"><span class="on">Matches</span><span>Management</span></div></div>
+  <div class="strip rv" style="--d:.25"><div><small>Free rooms</small><b>40, on 12–13 Dec</b></div><div><small>Guest interest</small><b>Hiking, the lake</b></div><div><small>Nearby that weekend</small><b>🎄 Wolfgangsee Advent</b></div><div><small>Matching past guests</small><b style="color:var(--m)">214</b></div></div>
+  <div class="cols">
+    <div class="feed"><h3 class="rv" style="--d:.35">Matches <span id="openCnt">2 waiting for review</span></h3>
+      <div class="card focus rv" id="cNature" style="--d:.5">
+        <div class="lbl" style="color:var(--m)"><i style="background:var(--m)"></i>New match <em>for next weekend</em></div>
+        <h4>Invite past hiking guests to the Wolfgangsee Advent weekend.</h4>
+        <p>214 past guests came for hiking or the lake and agreed to hear from the hotel. The Advent markets in St.&nbsp;Gilgen, Strobl and St.&nbsp;Wolfgang are open, and boats run between them.</p>
+        <div class="offer"><b>Suggested package:</b> 2 nights, boat pass, guided winter walk by the lake</div>
+        <div class="tags"><span class="tg">Guest · hiking stay</span><span class="tg x">Hotel · 40 free rooms</span><span class="tg o">Nearby · Advent markets</span></div>
+        <div class="acts"><button class="btn pulse" id="prep">✉ Prepare invitation</button><button class="btn ghost" id="why">Why this match?</button></div>
+      </div>
+      <div class="card rv" id="cBday" style="--d:.65;gap:8px;padding:16px 20px">
+        <div class="lbl" style="color:var(--b)"><i style="background:var(--b)"></i>New match <em>for 19–20 Dec</em></div>
+        <h4>A birthday weekend for Marina, a past wellness guest.</h4>
+        <p>Her birthday is on 19 December, and that weekend is only 22% booked.</p>
+        <div class="tags"><span class="tg">Guest · birthday 19 Dec</span><span class="tg">Guest · wellness stay</span><span class="tg x">Hotel · 22% booked</span></div>
+      </div>
+      <div class="done" id="done4"></div>
+    </div>
+    <div class="rail">
+      <div class="box rv" id="whyBox" style="--d:.6;transition:border-color .4s,box-shadow .4s"><h5>Why domino suggested this <span>3 signals</span></h5>
+        <div class="arr"><b>1</b><div>Guest history<small>Alexander and 213 others stayed for hiking</small><span class="tg">Booking system API</span></div></div>
+        <div class="arr"><b>2</b><div>Free rooms<small>40 rooms on 12–13 Dec</small><span class="tg x">Booking system API</span></div></div>
+        <div class="arr"><b>3</b><div>Nearby<small>Wolfgangsee Advent, 20 Nov – 20 Dec</small><span class="tg o">Event calendar API</span></div></div>
+      </div>
+      <div class="box rv" style="--d:.75"><h5>Before anything is sent</h5><p style="font-size:13px;line-height:1.55;color:var(--mut);margin:0">Staff read and approve every invitation. Only guests with marketing consent are included.</p></div>
+    </div>
+  </div>
+  <div class="scrim" id="scrim4"></div>
+  <aside class="drawer"><div class="dh"><small>Invitation draft <span>✦ AI-written, edit before approving</span></small><b>Advent weekend at Wolfgangsee</b></div>
+    <div class="db"><div class="to">Sent to<b>214 past hiking and lake guests</b>Each message uses the guest's own name and stay</div><div style="font-size:12px;color:var(--mut)">Preview for Alexander · you can edit the text</div><div class="msg" contenteditable="true" id="msgTxt"></div></div>
+    <div class="df"><span>Demo only, no messages are sent</span><button class="btn" id="send">Approve 214 invitations</button></div></aside>
+  <div class="toast" id="toast4">✓ 214 invitations approved</div>
+</div></div></section>
+
+<!-- 4 · HOW IT WORKS -->
+<section class="scene dark s5"data-note="<b>1:10–1:40 · How it works.</b> “Here's how it works. domino connects to the hotel's booking system and to event calendars through their APIs. A data-based, AI-supported model finds which guests fit which dates, events, or even birthdays. A GPT-based model, which we would develop, writes the invitation. Staff check it and send it, and only guests who agreed to hear from the hotel are contacted. For hotels, that means filling quiet weeks without discounts.”">
+  <div class="wrap">
+    <div><div class="eyebrow rv" style="--d:.1">How it works</div><h2 class="h rv" style="--d:.2">Four steps, and the hotel stays in control.</h2></div>
+    <div class="flow">
+      <div class="fl rv" style="--d:.35"><em>1 · Connect</em><b>Pull in the data</b><span>Booking system, guest birthdays and event calendars</span><i>APIs</i></div>
+      <div class="fl rv" style="--d:.45"><em>2 · Match</em><b>Find good fits</b><span>Which guests fit which dates, events or birthdays</span><i class="ai">Data-based, AI-supported</i></div>
+      <div class="fl rv" style="--d:.55"><em>3 · Draft</em><b>Write the invitation</b><span>In the hotel’s own tone</span><i class="ai">GPT-based model</i></div>
+      <div class="fl hu rv" style="--d:.65"><em>4 · Approve</em><b>Staff decide</b><span>Only opted-in guests are contacted</span><i>Human check</i></div>
+    </div>
+    <div class="val">
+      <div class="vb rv" style="--d:.85"><small>For hotels</small><b>Fill quiet weeks with more than just discounts.</b></div>
+      <div class="vb x rv" style="--d:1"><small>For guests</small><b>Hear about things they'd enjoy.</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · TEAM & CLOSE -->
+<section class="scene s7" data-note="<b>1:40–2:00 · Team.</b> “We're Melisa, Sejla and Yana from BugBusters, the minds behind the Domino. Back to Alexander: next Saturday evening he's on the boat to St. Wolfgang, with a hot drink in his hand. He didn't go looking for a trip. His hotel told him about one. That's domino. Thank you.”">
+  <div class="sky" id="sky7"></div>
+  <div class="center">
+    <div class="recap rv" style="--d:.1">Saturday, 12 December, 18:30 <b>🎄 Alexander is back at Wolfgangsee, on the Advent boat</b></div>
+    <h2 class="h big rv" style="--d:.35">Stop selling <span class="grad">empty rooms</span>.<br>Start creating reasons to travel.</h2>
+    <div class="team">
+      <div class="mem rv" style="--d:.7"><div class="av"><span>M</span></div><b>Melisa</b><small>Software Engineering</small></div>
+      <div class="mem rv" style="--d:.85"><div class="av"><span>S</span></div><b>Sejla</b><small>UX &amp; Design</small></div>
+      <div class="mem rv" style="--d:1"><div class="av"><span>Y</span></div><b>Yana</b><small>Software Engineering</small></div>
+    </div>
+    <div class="close-row rv anim" style="--d:1.3;--ad:1.5s"><div class="lockup sm"><svg class="tile" viewBox="0 0 60 100" aria-hidden="true"><rect class="tb" x="1" y="1" width="58" height="98" rx="12" fill="#8ECFF0"/><circle class="td" cx="30" cy="25" r="6.5" fill="#1F2B4D"/><rect class="tl" x="7" y="45" width="46" height="2.4" rx="1.2" fill="#1F2B4D"/><rect class="b1" x="8" y="77" width="10" height="13" rx="2.2" fill="#1F2B4D"/><rect class="b2" x="25" y="66" width="10" height="24" rx="2.2" fill="#1F2B4D"/><rect class="b3" x="42" y="55" width="10" height="35" rx="2.2" fill="#1F2B4D"/></svg><span class="word">dom<span class="wi"><i class="wd"></i><i class="ws"></i></span>no</span></div><span class="thanks">Thank you.</span></div>
+  </div>
+</section>
+
+<div id="notes"></div>
+<div class="hint" id="hint">→ / Space next · N notes · F fullscreen</div>
+<div id="ai">This pitch was prepared with AI assistance (Claude by Anthropic)</div>
+<div id="timer" title="Click to reset">⏱ 0:00 / 2:00</div>
+<div id="hud"><button id="prev" aria-label="Previous">‹</button><span class="cnt" id="cnt">1 / 5</span><button id="next" aria-label="Next">›</button></div>
+</div></div>
+
+<script>
+const S=[...document.querySelectorAll('.scene')];let cur=-1;
+const stage=document.getElementById('stage');
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform='scale('+s+')';stage.style.borderRadius=s>=.99&&innerWidth/innerHeight>1.7?'0':'18px'}
+addEventListener('resize',fit);fit();
+const $=id=>document.getElementById(id);
+
+// data stream (slide 1)
+(function(){const rows=['STAY 2025 · Eggers, Alexander · 17.10–19.10 · hiking, St. Gilgen','OCC 12.12 · 18% · 40 rooms free','EVENT · Wolfgangseer Advent · 20.11–20.12','STAY 2024 · Haber, Max · 4 guests · ski week','CONTACT · marketing_consent=true','OCC 19.12 · 22%','BIRTHDAY · Klar, Marina · 19.12','EVENT · Advent boat · St. Gilgen–Strobl–St. Wolfgang','REVIEW · Eggers · 5/5 · "I\'ll be back"','OCC 13.12 · 12%','STAY 2025 · Klar, Marina · wellness · 3 nights','EVENT · Salzburger Christkindlmarkt · Domplatz'];
+const st=$('stream');for(let c=0;c<4;c++){const d=document.createElement('div');d.className='col';d.style.left=(c*370-60)+'px';d.style.animationDuration=(22+c*4)+'s';d.style.animationDelay=(-c*3)+'s';let h='';for(let i=0;i<60;i++){const r=rows[(i*5+c*3)%rows.length];h+=(r.startsWith('STAY')||r.startsWith('REVIEW')||r.startsWith('BIRTHDAY')?'<span class="hit">'+r+'</span>':r.startsWith('EVENT')?'<span class="ev">'+r+'</span>':r)+'<br>'}d.innerHTML=h+h;st.appendChild(d)}})();
+
+// night sky (last slide)
+(function(el,n){for(let i=0;i<n;i++){const s=document.createElement('i');s.className='star';s.style.left=Math.random()*1280+'px';s.style.top=Math.random()*720+'px';s.style.animationDelay=(-Math.random()*3)+'s';s.style.animationDuration=(2+Math.random()*3)+'s';if(Math.random()<.15){s.style.width=s.style.height='3px'}el.appendChild(s)}
+ for(let i=0;i<9;i++){const m=document.createElement('i');m.className='meteor';m.style.left=(450+Math.random()*900)+'px';m.style.top=(-40+Math.random()*260)+'px';m.style.animationDuration=(4+Math.random()*4)+'s';m.style.animationDelay=(Math.random()*6)+'s';el.appendChild(m)}})($('sky7'),110);
+
+const timers=[];function later(f,ms){timers.push(setTimeout(f,ms))}
+function clearT(){timers.forEach(clearTimeout);timers.length=0}
+
+// occupancy chart (slide 2)
+const days=[90,84,80,78,74,70,66,52,30,22,18,17,16,15,20,26,34,42,50,58,66,72,70,68];
+const ch=$('chart'),gap=$('gap');
+days.forEach((v,i)=>{const d=document.createElement('div');d.className='d'+(i<2?' t':'');d.innerHTML='<div class="c"></div>';ch.appendChild(d)});
+function enterChart(){ch.querySelectorAll('.c').forEach(b=>b.style.height='0');gap.classList.remove('show');$('adv').classList.remove('show');
+ later(()=>ch.querySelectorAll('.c').forEach((b,i)=>later(()=>b.style.height=days[i]+'%',i*35)),300);later(()=>gap.classList.add('show'),1600)}
+gap.onclick=e=>{e.stopPropagation();$('adv').classList.add('show')};
+
+// domino demo (slide 3)
+const MSG="Hi Alexander,\n\nLast October you went hiking with us at Wolfgangsee. Next weekend the Advent markets are open in St. Gilgen, Strobl and St. Wolfgang, and boats run between the three villages.\n\nWe still have rooms free on 12–13 December. Would you like to see the lake in winter?\n\nBest wishes,\nYour team at the hotel";
+let typeT;
+function resetDemo(){clearInterval(typeT);$('app4').classList.remove('open');$('cNature').classList.remove('gone');$('done4').innerHTML='';$('openCnt').textContent='2 waiting for review';$('toast4').classList.remove('show');$('whyBox').classList.remove('hl');$('prep').classList.add('pulse');$('msgTxt').textContent=''}
+$('why').onclick=e=>{e.stopPropagation();$('whyBox').classList.toggle('hl')};
+$('prep').onclick=e=>{e.stopPropagation();$('prep').classList.remove('pulse');$('app4').classList.add('open');
+ const m=$('msgTxt');clearInterval(typeT);let n=0;m.innerHTML='<span class="cur"></span>';
+ later(()=>{typeT=setInterval(()=>{n=Math.min(MSG.length,n+3);m.textContent=MSG.slice(0,n);if(n<MSG.length){m.insertAdjacentHTML('beforeend','<span class="cur"></span>')}else clearInterval(typeT)},16)},450)};
+$('scrim4').onclick=()=>$('app4').classList.remove('open');
+$('send').onclick=e=>{e.stopPropagation();clearInterval(typeT);$('app4').classList.remove('open');$('cNature').classList.add('gone');$('openCnt').textContent='1 waiting for review';
+ $('done4').innerHTML='<div style="font-size:12px;color:var(--mut);padding-top:4px">Reviewed</div><div class="dn"><i>✓</i><span style="flex:1">Advent weekend invitation · 214 guests · approved</span><small style="color:var(--mut)">Demo only</small></div>';
+ $('toast4').classList.add('show');later(()=>$('toast4').classList.remove('show'),4000)};
+
+const enter={0(){const g=$('g1');g.classList.remove('rev');later(()=>g.classList.add('rev'),2600)},1(){enterChart()},2(){resetDemo()}};
+function go(i){if(i<0||i>=S.length||i===cur)return;clearT();S.forEach(s=>s.classList.remove('on'));cur=i;
+ const s=S[i];void s.offsetWidth;s.classList.add('on');
+ $('bar').style.width=((i+1)/S.length*100)+'%';
+ $('cnt').textContent=(i+1)+' / '+S.length;
+ $('notes').innerHTML=s.dataset.note||'';$('ai').classList.toggle('onlight',s.classList.contains('light'));$('hint').style.display=s.classList.contains('light')?'none':'';
+ enter[i]&&enter[i]();if(!started)startTimer()}
+$('next').onclick=e=>{e.stopPropagation();go(cur+1)};
+$('prev').onclick=e=>{e.stopPropagation();go(cur-1)};
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('[contenteditable]'))return;if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(cur+1)}else if(['ArrowLeft','PageUp'].includes(e.key))go(cur-1);else if(e.key==='n'||e.key==='N')$('notes').classList.toggle('show');else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}});
+// clicking empty space on the dark slides advances
+S.forEach(s=>s.addEventListener('click',e=>{if(e.target.closest('button,.guest,.mem'))return;if(s.classList.contains('dark')||s.classList.contains('s7'))go(cur+1)}));
+
+let started=false,t0=0;function startTimer(){started=true;t0=Date.now();setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);const el=$('timer');el.textContent='⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' / 2:00';el.style.color=s>120?'#FF8FCB':''},500)}
+$('timer').onclick=()=>{t0=Date.now()};
+$('g1').onclick=e=>e.currentTarget.classList.toggle('rev');
+go(0);
+</script>
+</body>
+</html>
