@@ -29,6 +29,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 .content{padding:24px 18px 96px !important}
 .drawer{top:0 !important;right:0 !important;bottom:0 !important;max-width:100% !important;border-radius:0 !important}
 }
+.typing{display:inline-flex;gap:4px;align-items:center;height:18px}
+.typing span{width:6px;height:6px;border-radius:50%;background:#B5006B;opacity:.35;animation:typingDot 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes typingDot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion: reduce){.typing span{animation:none;opacity:.6}}
 </style>
 </helmet>
 <div style="min-height: 100vh; background: #F5EFF3; color: #1E1A22; font-family: 'Inter', system-ui, -apple-system, sans-serif; display: flex; flex-wrap: wrap; box-sizing: border-box; font-size: 14px;">
@@ -536,7 +542,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
           </div>
           <sc-for list="{{messages}}" as="m" hint-placeholder-count="0">
             <div style="{{m.rowStyle}}">
-              <div style="{{m.bubbleStyle}}">{{m.text}}</div>
+              <div style="{{m.bubbleStyle}}">
+                <sc-if value="{{m.isTyping}}" hint-placeholder-val="{{ false }}">
+                  <span class="typing" role="status" aria-label="Antwort wird geladen"><span></span><span></span><span></span></span>
+                </sc-if>
+                <sc-if value="{{m.notTyping}}" hint-placeholder-val="{{ true }}">
+                  <span>{{m.text}}</span>
+                </sc-if>
+              </div>
             </div>
           </sc-for>
         </div>
@@ -817,7 +830,7 @@ const WEBHOOK = "https://n8n.oi.destination.one/webhook/team-11-ask";
     async askClaude(item, q) {
     const id = item.id;
     const before = Object.assign({}, this.state.chats);
-    before[id] = (before[id] || []).concat([{ r: 'u', t: q }, { r: 'a', t: 'Einen Moment …' }]);
+    before[id] = (before[id] || []).concat([{ r: 'u', t: q }, { r: 'a', t: '', typing: true }]);
     this.setState({ chats: before });
     let answer;
     try {
@@ -1002,6 +1015,8 @@ const WEBHOOK = "https://n8n.oi.destination.one/webhook/team-11-ask";
     const msgs = selItem ? (s.chats[selItem.id] || []) : [];
     const messages = msgs.map((mm) => ({
       text: mm.t,
+      isTyping: !!mm.typing,
+      notTyping: !mm.typing,
       rowStyle: 'display: flex; justify-content: ' + (mm.r === 'u' ? 'flex-end' : 'flex-start') + ';',
       bubbleStyle: 'max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-line; ' + (mm.r === 'u' ? 'background: #B5006B; color: #FFFFFF; border-bottom-right-radius: 4px;' : 'background: #F7EEF3; color: #1E1A22; border-bottom-left-radius: 4px;')
     }));
